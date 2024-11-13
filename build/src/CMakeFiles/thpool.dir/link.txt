@@ -1,2 +1,0 @@
-/usr/bin/ar qc libthpool.a CMakeFiles/thpool.dir/thpool.c.o
-/usr/bin/ranlib libthpool.a
