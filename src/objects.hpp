@@ -1,22 +1,28 @@
 #pragma once
 
 #include <iostream> // cout
-// #include <err.h> // err stream
 #include <memory> // smart pointers
 #include <list>   // s.e.
-#include <thread_pools.hpp>
-#include <clock.cpp>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_main.h>
-#include <SDL2/SDL_image.h>
-#include <colors.h>
-#include <string>
+#include <unordered_set>
 #include <functional>
+#include <string>
+
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <thread_pools.hpp>
+
+#include <clock.h>
+#include <vects.hpp>        // Mathematical vectors
+
+#include <colors.h>
 
 using std::list;
 using std::string;
+using std::function;
+using std::unordered_set;
 
 using std::move;
+using std::make_shared;
 using std::make_unique;
 using std::shared_ptr;
 using std::unique_ptr;
@@ -26,8 +32,12 @@ class Engine;
 
 class Transform
 {
-    Vect2i offset;
-    float scale;
+public:
+    Vect2i offset; // offset relative to parent, or global position if root
+    Vect2i global; // actual position, result of parent.global + offset
+    Vect2i base_size;
+    Vect2i size;
+    Vect2f scale;
 };
 
 class Object
@@ -36,53 +46,43 @@ class Object
 protected:
     weak_ptr<Engine> engine_view;
     list<shared_ptr<Object>> children;
-    std::function behaviour;
+    function<void(Object*)> init_behavior;
+    function<void(Object*)> loop_behavior;
 public:
-    virtual void init() = 0;
-    virtual void loop()
-    {
-        
-    }
-    void addChild(shared_ptr<Object> child) 
-    {
-        if(std::find(children.begin(), children.end(), child) != children.end());
-            children.push_back(child);
-    }
-    shared_ptr<Object> getChild(int index)
-    {
-        if(children.size() >= index)
-            throw 42;
-        auto it = children.begin();
-        std::advance(it, index);
-        return *it;
-    }
+    virtual void init();
+    
+    virtual void loop();
+    
+    void addChild(shared_ptr<Object> child);
+    
+    shared_ptr<Object> getChild(int index);
+    
     /**
      * @brief A callable which is called in the object's loop
      * 
      * @param behaviour 
      */
-    void attachBehaviour(std::function behaviour)
-    {
-
-    }
-};
-
-class Object2D : public Object
-{
-public:
-    Vect2f pos;
+    void attachInitBehaviour(function<void(Object*)> behavior);
     
+    /**
+     * @brief A callable which is called in the object's init
+     * 
+     * @param behaviour 
+     */
+    void attachLoopBehaviour(std::function<void(Object*)> behavior);
 };
 
-class GraphicObject : public Object
+class Object2D : virtual public Object, virtual public Transform
 {
+};
+
+class GraphicSystem;
+
+class GraphicObject : public Object2D
+{
+    friend GraphicSystem;
 public:
-    enum RTTI
-    {
-        RECT,
-        BACKGROUND,
-        SPRITE
-    };
+    SDL_Renderer* render_view; // due to SDL shenanigans, smart pointers are not an option
     enum Color
     {
         RED,
@@ -90,35 +90,8 @@ public:
         BLUE
     };
     Color color = RED;
-    static void setDrawColor(SDL_Renderer *render, Color c)
-    {
-        switch (c)
-        {
-        case RED:
-            SDL_SetRenderDrawColor(render, RGB_RED, 255);
-            break;
-        case GREEN:
-            SDL_SetRenderDrawColor(render, RGB_GREEN, 255);
-            break;
-        case BLUE:
-            SDL_SetRenderDrawColor(render, RGB_BLUE, 255);
-            break;
-        default:
-            SDL_SetRenderDrawColor(render, RGB_MAGENTA, 255);
-        }
-    }
-    virtual void draw(SDL_Renderer *render)
-    {
-        setDrawColor(render, color);
-        SDL_Rect r = {100, 100, 100, 100};
-        SDL_RenderFillRect(render, &r);
-    }
-    void init() final
-    {
-    }
-    void loop() final
-    {
-    }
+    static void setDrawColor(SDL_Renderer *render, Color c);
+    virtual void draw();
 };
 
 /**
@@ -127,40 +100,21 @@ public:
  */
 class TextureObject : public GraphicObject
 {
-    Vect2i texture_size;
     SDL_Texture* texture;
 public:
-    Vect2i pos;
-    Vect2i size;
-    void setTexture(SDL_Renderer* render, string filepath)
-    {
-        texture = IMG_LoadTexture(render, filepath.c_str());
-        if(!texture)
-            std::cout<<IMG_GetError()<<'\n';
-        SDL_QueryTexture(texture, NULL, NULL, &texture_size.x, &texture_size.y);
-        size = texture_size;
-    }
+    void setTexture(SDL_Renderer* render, string filepath);
+    
     /**
-     * @brief Scale image to have a width of 'x'
+     * @brief Scale size to have a width of 'x'
      */
-    void scaleX(int x)
-    {
-        size = texture_size / texture_size.x * x;
-    }
+    void scaleX(int x);
+
     /**
-     * @brief Scale image to have a height of 'y'
+     * @brief Scale size to have a height of 'y'
      */
-    void scaleY(int y)
-    {
-        size = texture_size / texture_size.y * y;
-    }
-    virtual void draw(SDL_Renderer *render)
-    {
-        int w, h;
-        SDL_Rect dest = {pos.x, pos.y, size.x, size.y};
-        if(SDL_RenderCopy(render, texture, NULL, &dest))
-            std::cout<<SDL_GetError()<<'\n';
-    }
+    void scaleY(int y);
+
+    void draw() override;
 };
 
 class GraphicSystem
@@ -168,44 +122,17 @@ class GraphicSystem
 public:
     SDL_Renderer *render;
     SDL_Window *window;
-    list<shared_ptr<GraphicObject>> objs;
-    GraphicSystem()
-    {
-        if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-            std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
-        
-        }
-        window = SDL_CreateWindow("Window Name", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 840, SDL_WINDOW_SHOWN);
-        render = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-        //SDL_SetRenderDrawColor(render, RGB_WHITE, 255);
-        //SDL_RenderClear(render);
-        //SDL_RenderPresent(render);
-    }
-    unique_ptr<TextureObject> loadTexture(string filepath)
-    {
-        unique_ptr<TextureObject> texture = make_unique<TextureObject>();
-        texture->setTexture(render, filepath);
-        return move(texture);
-    }
-    shared_ptr<GraphicObject> getObj()
-    {
-        return *objs.begin();
-    }
-    void addObj(std::shared_ptr<GraphicObject> obj)
-    {
-        objs.push_back(obj);
-    }
-    void update()
-    {
-        SDL_SetRenderDrawColor(render, RGB_WHITE, 255);
-        SDL_RenderClear(render);
-        for (auto iter = objs.begin(); iter != objs.end(); iter++)
-        {
-            GraphicObject &obj = *iter->get();
-            obj.draw(render);
-        }
-        SDL_RenderPresent(render);
-        std::cout << "Frame end" << "\n\n";
-    }
+    unordered_set<shared_ptr<GraphicObject>> bucket;
+    
+    GraphicSystem();
+    
+    shared_ptr<TextureObject> loadTexture(string filepath);
+    
+    void addObj(shared_ptr<GraphicObject> obj);
+    
+    void removeObj(shared_ptr<GraphicObject> obj);
+
+    void update();
+
 };
 

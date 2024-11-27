@@ -1,58 +1,74 @@
+/**
+ * @file main.cpp
+ * @author Alex (aleksandriliev05@gmail.com)
+ * @brief 
+ * @version 0.1
+ * @date 2024-11-27
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
+
 /*
-    Preamble:
+    Preamble
     Death to premature optimization. Write code for function, not speed nor scalability.
     Objects with user access may not use raw pointers.
     Objects with need for performance may break any rules as nescessary.
-
 */
 
-#include <iostream> // cout
-// #include <err.h> // err stream
-#include <memory> // smart pointers
-#include <list>   // s.e.
-#include <thread_pools.hpp>
-#include <clock.cpp>
+#include <iostream>         // cout
+#include <memory>           // smart pointers
+#include <list>             // s.e.
+#include <unordered_set>    // hash table
+
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_main.h>
-#include <colors.h>
-#include <vects.hpp>
+#include <SDL2/SDL_main.h> //
 #include <SDL2/SDL_image.h>
+#include <thread_pools.hpp>
+
+#include <vects.hpp>        // Mathematical vectors
+#include <clock.h>          // clock/timer utility
+
+#include <colors.h>         // #defined RGB_COLORs
 #include <objects.hpp>
 
 using std::list;
+using std::unordered_map;
+using std::unordered_multimap;
+using std::unordered_set;
+using std::queue;
+using std::mutex;
 
 using std::move;
 using std::make_shared;
 using std::make_unique;
+using std::static_pointer_cast;
+using std::dynamic_pointer_cast;
 using std::shared_ptr;
 using std::weak_ptr;
 
-
-
-class MyObj : public Object
+class EngineController : public Object
 {
-    int data = 42;
+    Clock timeout;
+public:
     void init()
     {
-        
+        timeout.start_timer();
     }
-    void loop()
-    {
-        std::cout << data << '\n';
-    }
+    void loop();
 };
 
-class EngineController;
 class Engine
 {
     friend EngineController;
     
     weak_ptr<Engine> view;
     thread_pool::dynamic_pool workers;
-    list<shared_ptr<Object>> objs;
+    unordered_set<shared_ptr<Object>> root_objects;
+    unordered_set<shared_ptr<Object>> bucket;
     double tick_delay; // minimum time between updates
-    Clock clock;
     std::mutex run;         // signifies the thread running the engine
+    Clock clock;
     std::atomic<bool> stop; // set to true to stop engine
     std::mutex operation;   // can either be held when runing an update or changing engine settings
     
@@ -63,11 +79,15 @@ public:
     static std::shared_ptr<Engine> create()
     {
         auto e = new Engine;
-        auto shared = std::shared_ptr<Engine>(e);
+        auto shared = shared_ptr<Engine>(e);
         e->view = weak_ptr<Engine>(shared);
         e->gsys = new GraphicSystem;
+        EngineController *controler = new EngineController;
+        controler->init();
+        e->addObj(shared_ptr<Object>(controler));
         return shared;
     }
+
     void start()
     {
         if (!run.try_lock())
@@ -88,77 +108,139 @@ public:
                     break;
                 }
             }
-            tick();
             clock.delta_time(tick_delay);
+            updateAll();
         }
         run.unlock();
     }
-    std::shared_ptr<Object> getObj()
-    {
-        return *objs.begin();
-    }
-    void addObj(std::shared_ptr<Object> obj)
+
+    /**
+     * @brief Add root object
+     * 
+     * @param obj 
+     */
+    void addObj(shared_ptr<Object> obj)
     {
         obj->engine_view = weak_ptr<Engine>(view);
-        objs.push_back(obj);
+        root_objects.insert(obj);
+        addObjRecursive(obj);
     }
-    void tick()
+    
+    void removeObj(shared_ptr<Object> obj)
     {
-        for (auto iter = objs.begin(); iter != objs.end(); iter++)
+        root_objects.erase(obj);
+        removeObjRecursive(obj);
+    }
+
+    /**
+     * @brief Add object to processing wake up list
+     * 
+     * @param obj 
+     */
+    void addObjRecursive(shared_ptr<Object> &obj)
+    {
+        obj->init();
+        bucket.insert(obj);
+        shared_ptr<GraphicObject> graphic = dynamic_pointer_cast<GraphicObject>(obj);
+        if(graphic)
         {
-            Object &obj = *iter->get();
-            workers.enqueue(std::bind(&Object::loop, &obj));
+            gsys->addObj(graphic);
         }
+        for (auto iter = obj->children.begin(); iter != obj->children.end(); iter++)
+        {
+            addObjRecursive(*iter);
+        }
+    }
+    
+    void removeObjRecursive(shared_ptr<Object> &obj)
+    {
+        for (auto iter = obj->children.begin(); iter != obj->children.end(); iter++)
+        {
+            addObjRecursive(*iter);
+        }
+        shared_ptr<GraphicObject> graphic = dynamic_pointer_cast<GraphicObject>(obj);
+        if(graphic)
+        {
+            gsys->removeObj(graphic);
+        }
+        bucket.erase(obj);
+    }
+
+    void updateAll()
+    {
+        this->update();
         gsys->update();
         std::cout << "Tick end" << "\n\n";
     }
+
+    void update()
+    {
+        for (auto iter = bucket.begin(); iter != bucket.end(); iter++)
+        {
+            workers.enqueue(std::bind(&Object::loop, *iter));
+        }
+    }
 };
 
-class EngineController : public Object
+void EngineController::loop()
 {
-    Clock timeout;
+    static Clock delta_c;
+    double delta = delta_c.delta_time();
+    double time = timeout.get_time();
+    std::cout << string() + "Lifetime: " + std::to_string(time) + " (" + std::to_string(delta) + ")" << '\n';
+    if (time > 30)
+    {
+        auto shared_engine = engine_view.lock();
+        if (!shared_engine)
+            return;
+        shared_engine->stop = true;
+    }
+}
 
+class Event{};
+
+class EventDispatcher
+{
 public:
-    void init()
+    queue<Event> waiting;
+    queue<Event> active;
+    mutex
+    unordered_multimap<SDL_Scancode, function<void(void)>> handles;
+    void addEventHandler(SDL_Scancode event_type, function<void(void)> handle)
     {
-        timeout.start_timer();
+        handles.emplace(event_type, handle);
     }
-    void loop()
+    void addEvent()
     {
-        double time = timeout.get_time();
-        std::cout << "Lifetime: " << time << '\n';
-        if (time > 5)
-        {
-            auto shared_engine = engine_view.lock();
-            if (!shared_engine)
-                return;
-            shared_engine->tick_delay = 1.0/20;
-        }
-        if (time > 30)
-        {
-            auto shared_engine = engine_view.lock();
-            if (!shared_engine)
-                return;
-            shared_engine->stop = true;
-        }
-    }
+
+    };
 };
 
 int main()
 {
     SDL_Init(SDL_INIT_EVERYTHING);
     auto e = Engine::create();
-    EngineController *c = new EngineController;
-    c->init();
-    e->addObj(shared_ptr<Object>(new MyObj));
-    e->addObj(shared_ptr<Object>(c));
     
     auto texture = e->gsys->loadTexture("/home/sasho_b/Coding/game_engine/resources/placeholder.png");
     texture->scaleX(100);
-    e->gsys->addObj(shared_ptr<GraphicObject>(move(texture)));
-    e->gsys->addObj(shared_ptr<GraphicObject>(new GraphicObject));
-    e->start();
+    e->addObj(texture);
 
+    auto object = make_shared<Object>();
+    object->attachInitBehaviour( [](Object* self) {
+        auto sprite = make_shared<GraphicObject>();
+        self->addChild(static_pointer_cast<Object>(sprite));
+        sprite->global = {200, 200};
+        sprite->size = {50, 400};
+    });
+    
+    object->attachLoopBehaviour( [](Object* self) {
+        auto sprite = dynamic_pointer_cast<GraphicObject>(self->getChild(0));
+        sprite->global.x++;
+    });
+    
+    e->addObj(object);
+
+    e->start();
     SDL_Quit();
     return 0;
 }

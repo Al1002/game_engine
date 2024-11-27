@@ -40,12 +40,17 @@ class Clock
 {
 	const static long NANOS_PER_SEC = 1000000000;
 	const static long MICROS_PER_SEC = 1000000;
-	timespec past, present, stop;
+	timespec past, present, stop; // past - when the timer was last started, present - static place to load current time, stop - when the timer was stopped
 	double delta;
 	bool stopped = false;
 
 public:
 
+	/**
+	 * @brief Timer will start on creation.
+	 * 
+	 */
+	Clock();
 	/**
 	 * @brief Starts the timer.
 	 *
@@ -88,7 +93,6 @@ public:
 	 * at least `tick_duration` seconds to have elapsed before returning,
 	 * while blocking the thread.
 	 * Use for rapid time checking and setting iteration rate (ex: for loop).
-	 * Up to 10 micros inaccuracy.
 	 *
 	 * @return The time elapsed between function calls
 	 *
@@ -97,7 +101,7 @@ public:
 	 *
 	 * @param tick_durration The time to wait, in secconds
 	 */
-	double delta_time(double tick_durration);
+	double delta_time(double tick_durration = -1 );
 
 
 };

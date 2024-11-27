@@ -1,4 +1,7 @@
 #pragma once
+/*
+    WARNING - SOME FUNCTION DEFINITIONS (constructor/destructor) INLINED!
+ */
 
 #include <algorithm>
 #include <array>
@@ -22,10 +25,10 @@ final { // Simple thread-safe & container-free thread pool.
 public:
     const std::size_t size{0};
 
-    explicit static_pool(
+    explicit inline static_pool(
             std::size_t /* suggested size */ = std::thread::hardware_concurrency() + 2);
 
-    ~static_pool();
+    inline ~static_pool();
 
     template<typename Func, typename... Args>
     auto enqueue(Func &&f, Args &&... args) /* For Cpp14+ -> decltype(auto). */
@@ -35,7 +38,7 @@ public:
     //    auto enqueue_advance(Func &&f, Args &&... args) /* For Cpp14+ ->
     //    decltype(auto). */
     //    -> std::future<typename std::result_of<Func(Args...)>::type>;
-    void wait();
+    inline void wait();
 
 private:
     using task_type = std::function<void()>;
