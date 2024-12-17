@@ -2,3 +2,6 @@
 html/
 latex/
 build/
+gmon.out
+analisys*
+callgrind*

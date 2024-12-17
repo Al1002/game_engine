@@ -15,7 +15,7 @@ void Object::loop()
 void Object::addChild(shared_ptr<Object> child)
 {
     if (std::find(children.begin(), children.end(), child) != children.end())
-        ;
+        return;
     children.push_back(child);
 }
 
@@ -148,4 +148,9 @@ void GraphicSystem::update()
     }
     SDL_RenderPresent(render);
     std::cout << "Frame end" << "\n";
+}
+
+void EngineController::init()
+{
+    timeout.start_timer();
 }

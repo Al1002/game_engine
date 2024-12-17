@@ -24,8 +24,9 @@ using std::unordered_set;
 using std::move;
 using std::make_shared;
 using std::make_unique;
+using std::static_pointer_cast;
+using std::dynamic_pointer_cast;
 using std::shared_ptr;
-using std::unique_ptr;
 using std::weak_ptr;
 
 class Engine;
@@ -44,19 +45,37 @@ class Object
 {
     friend Engine;
 protected:
-    weak_ptr<Engine> engine_view;
     list<shared_ptr<Object>> children;
     function<void(Object*)> init_behavior;
     function<void(Object*)> loop_behavior;
 public:
+    weak_ptr<Engine> engine_view;
+    
+    inline shared_ptr<Engine> getEngine()
+    {
+        return engine_view.lock();
+    }
+
     virtual void init();
     
     virtual void loop();
     
     void addChild(shared_ptr<Object> child);
     
+    template<typename T>
+    inline void addChild(shared_ptr<T> child)
+    {
+        addChild(static_pointer_cast<Object>(child));
+    }
+
     shared_ptr<Object> getChild(int index);
     
+    template<typename T>
+    inline shared_ptr<T> getChild(int index)
+    {
+        return dynamic_pointer_cast<T>(getChild(index));
+    }
+
     /**
      * @brief A callable which is called in the object's loop
      * 
@@ -69,7 +88,9 @@ public:
      * 
      * @param behaviour 
      */
-    void attachLoopBehaviour(std::function<void(Object*)> behavior);
+    void attachLoopBehaviour(function<void(Object*)> behavior);
+
+    void attachEventHandler(shared_ptr)
 };
 
 class Object2D : virtual public Object, virtual public Transform
@@ -136,3 +157,11 @@ public:
 
 };
 
+class EngineController : public Object
+{
+    Clock timeout;
+public:
+    void init();
+    
+    void loop();
+};
