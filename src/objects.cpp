@@ -1,3 +1,14 @@
+/**
+ * @file objects.cpp
+ * @author Alex (aleksandriliev05@gmail.com)
+ * @brief 
+ * @version 0.1
+ * @date 2024-12-18
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
+
 #include <objects.hpp>
 
 void Object::init()
@@ -17,15 +28,34 @@ void Object::addChild(shared_ptr<Object> child)
     if (std::find(children.begin(), children.end(), child) != children.end())
         return;
     children.push_back(child);
+    child->parent_view = weak_ptr<Object>(shared_from_this());
 }
 
 shared_ptr<Object> Object::getChild(int index)
 {
     if (children.size() <= index)
-        throw 42;
-    auto it = children.begin();
-    std::advance(it, index);
-    return *it;
+        throw std::out_of_range("Index out of range");
+    auto iter = children.begin();
+    std::advance(iter, index);
+    return *iter;
+}
+
+shared_ptr<Object> Object::getChild(const std::vector<int>& indices)
+{
+    if (indices.empty())
+        throw std::invalid_argument("Indices list is empty");
+    int index = indices.front(); // front of the list
+    
+    if (children.size() <= index)
+        throw std::out_of_range("Index out of range");
+    auto iter = children.begin();
+    std::advance(iter, index);
+    
+    if (indices.size() == 1)
+        return *iter;
+    
+    std::vector<int> remainder(indices.begin() + 1, indices.end());
+    return (*iter)->getChild(remainder);
 }
 
 /**
@@ -69,7 +99,7 @@ void GraphicObject::setDrawColor(SDL_Renderer *render, Color c)
 void GraphicObject::draw()
 {
     setDrawColor(render_view, color);
-    SDL_Rect r = {global.x, global.y, size.x, size.y};
+    SDL_Rect r = {global().x, global().y, size.x, size.y};
     SDL_RenderFillRect(render_view, &r);
 }
 
@@ -101,7 +131,7 @@ void TextureObject::scaleY(int y)
 void TextureObject::draw()
 {
     int w, h;
-    SDL_Rect dest = {global.x, global.y, size.x, size.y};
+    SDL_Rect dest = {global().x, global().y, size.x, size.y};
     if (SDL_RenderCopy(render_view, texture, NULL, &dest))
         std::cout << SDL_GetError() << '\n';
 }

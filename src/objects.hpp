@@ -28,23 +28,16 @@ using std::static_pointer_cast;
 using std::dynamic_pointer_cast;
 using std::shared_ptr;
 using std::weak_ptr;
+using std::enable_shared_from_this; // allows safe taking of shared_ptr<>(this) instance
 
 class Engine;
 
-class Transform
-{
-public:
-    Vect2i offset; // offset relative to parent, or global position if root
-    Vect2i global; // actual position, result of parent.global + offset
-    Vect2i base_size;
-    Vect2i size;
-    Vect2f scale;
-};
 
-class Object
+class Object : public std::enable_shared_from_this<Object>
 {
     friend Engine;
 protected:
+    weak_ptr<Object> parent_view;
     list<shared_ptr<Object>> children;
     function<void(Object*)> init_behavior;
     function<void(Object*)> loop_behavior;
@@ -70,10 +63,26 @@ public:
 
     shared_ptr<Object> getChild(int index);
     
+    shared_ptr<Object> getChild(const std::vector<int>& indices);
+    
     template<typename T>
     inline shared_ptr<T> getChild(int index)
     {
-        return dynamic_pointer_cast<T>(getChild(index));
+        auto child = dynamic_pointer_cast<T>(getChild(index));
+        if(child.get() == nullptr)
+            throw "Child not of specified class";
+        return child;
+    }
+    
+    template<typename T>
+    inline shared_ptr<T> getChild(const std::vector<int>& indices)
+    {
+        return dynamic_pointer_cast<T>(getChild(indices));
+    }
+    
+    inline void operator[](int index)
+    {
+        getChild(index);
     }
 
     /**
@@ -90,11 +99,25 @@ public:
      */
     void attachLoopBehaviour(function<void(Object*)> behavior);
 
-    void attachEventHandler(shared_ptr)
+    //avoid attachEventHandler(shared_ptr);
 };
 
-class Object2D : virtual public Object, virtual public Transform
+class Object2D : virtual public Object
 {
+public:
+    Vect2i offset; // offset relative to parent, or global position if root
+    const Vect2i global() // actual position, result of parent.global + offset
+    {
+        auto parent = dynamic_pointer_cast<Object2D>(parent_view.lock());
+        if(parent.get() == nullptr)
+            return offset;
+        else
+            return parent->global() + offset;
+    } 
+    Vect2i base_size;
+    Vect2i size;
+    Vect2f scale;
+
 };
 
 class GraphicSystem;

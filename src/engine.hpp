@@ -1,3 +1,13 @@
+/**
+ * @file engine.hpp
+ * @author Alex (aleksandriliev05@gmail.com)
+ * @brief 
+ * @version 0.1
+ * @date 2024-12-18
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 #pragma once
 
 #include <iostream>         // cout
@@ -44,8 +54,7 @@ public:
             return shared_ptr<Event>();
     }
 
-}; 
-
+};
 
 class EventDispatcher
 {
@@ -53,7 +62,7 @@ class EventDispatcher
     queue<shared_ptr<Event>> *back;  // and consumed
     queue<shared_ptr<Event>> *front; // event go in front  
 public:
-    mutex front_m; //
+    mutex front_m;
     unordered_set<shared_ptr<HandlerI>> handles;
 
     EventDispatcher(){

@@ -53,49 +53,52 @@ using std::weak_ptr;
 class MyHandler : public Handler<KeyboardEvent>
 {
 public:
-    shared_ptr<GraphicObject> that;
-    MyHandler(shared_ptr<GraphicObject> t)
+    shared_ptr<Object2D> that;
+    MyHandler(shared_ptr<Object2D> t)
     {
         that = t;
     }
     void handle(shared_ptr<KeyboardEvent> e) override
     {
         if(e->sdl_event.keysym.sym == 'a')
-            that->global.x-=100;
+            that->offset.x-=100;
         if(e->sdl_event.keysym.sym == 'd')
-            that->global.x+=100;
+            that->offset.x+=100;
         if(e->sdl_event.keysym.sym == 'w')
-            that->global.y-=100;
+            that->offset.y-=100;
         if(e->sdl_event.keysym.sym == 's')
-            that->global.y+=100;
-    
+            that->offset.y+=100;
     }
 };
-
 
 int main()
 {
     SDL_Init(SDL_INIT_EVERYTHING);
     auto e = Engine::create();
 
-    auto texture = e->gsys->loadTexture("/home/sasho_b/Coding/game_engine/resources/placeholder.png");
+    auto texture = e->gsys->loadTexture("resources/placeholder.png");
     texture->scaleX(100);
     e->addObj(texture);
 
     auto object = make_shared<Object>();
     object->attachInitBehaviour( [](Object* self) {
-        auto sprite = make_shared<GraphicObject>();
-        self->addChild(sprite);
-        sprite->global = {200, 200};
-        sprite->size = {50, 400};
-        self->getEngine()->disp->addEventHandler(make_shared<MyHandler>(self->getChild<GraphicObject>(0)));
+        self->addChild(make_shared<Object2D>());
+        self->getChild(0)->
+            addChild(make_shared<GraphicObject>());
+        self->getChild<GraphicObject>({0, 0})->
+            offset = {200, 200};
+        self->getChild<GraphicObject>({0, 0})->
+            size = {50, 100};
+        self->getChild(0)->
+            addChild(make_shared<GraphicObject>(*self->getChild<GraphicObject>({0, 0})));
+        self->getChild<GraphicObject>({0, 1})->offset = {300, 300};
+        self->getEngine()->disp->addEventHandler(make_shared<MyHandler>(self->getChild<Object2D>(0)));
     });
 
     object->attachLoopBehaviour( [](Object* self) {
-        auto sprite = self->getChild<GraphicObject>(0);
-        sprite->global.x++;
+        auto sprite = self->getChild<Object2D>(0);
+        sprite->offset.x++;
     });
-    
     
     e->addObj(object);
 
