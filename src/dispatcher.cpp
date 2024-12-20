@@ -39,7 +39,7 @@ void EventDispatcher::dispatch()
     while (!front->empty())
     {
         auto event = front->front();
-        back->pop();
+        front->pop();
         for (auto &handler : handles)
         {
             auto hash = typeid(*event.get()).hash_code();

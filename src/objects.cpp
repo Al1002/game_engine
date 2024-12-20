@@ -1,12 +1,12 @@
 /**
  * @file objects.cpp
  * @author Alex (aleksandriliev05@gmail.com)
- * @brief 
+ * @brief
  * @version 0.1
  * @date 2024-12-18
- * 
+ *
  * @copyright Copyright (c) 2024
- * 
+ *
  */
 
 #include <objects.hpp>
@@ -40,20 +40,20 @@ shared_ptr<Object> Object::getChild(int index)
     return *iter;
 }
 
-shared_ptr<Object> Object::getChild(const std::vector<int>& indices)
+shared_ptr<Object> Object::getChild(const std::vector<int> &indices)
 {
     if (indices.empty())
         throw std::invalid_argument("Indices list is empty");
     int index = indices.front(); // front of the list
-    
+
     if (children.size() <= index)
         throw std::out_of_range("Index out of range");
     auto iter = children.begin();
     std::advance(iter, index);
-    
+
     if (indices.size() == 1)
         return *iter;
-    
+
     std::vector<int> remainder(indices.begin() + 1, indices.end());
     return (*iter)->getChild(remainder);
 }
@@ -76,6 +76,38 @@ void Object::attachInitBehaviour(function<void(Object *)> behavior)
 void Object::attachLoopBehaviour(std::function<void(Object *)> behavior)
 {
     this->loop_behavior = behavior;
+}
+
+const Vect2i Object2D::global() // actual position, result of parent.global + offset
+{
+    auto parent = dynamic_pointer_cast<Object2D>(parent_view.lock());
+    if (parent.get() == nullptr)
+        return offset;
+    else
+        return parent->global() + offset;
+}
+
+class GraphicSystem;
+
+/**
+ * @brief Set the draw Height of the object. When objects are occupying the same space,
+ * the object with the largest height will be drawn above the rest.
+ *
+ * @param height
+ */
+void GraphicObject::setDrawHeight(const int &height)
+{
+    if (gsys_view == nullptr)
+        this->height = height;
+    else
+    {
+        // while not nescessary per se, we set the height only after the object is out of the set
+        // we technically dont have ownership until the object is outside the queue
+        // also dynamic cast can never fail assumin shared_from_this() doesnt
+        gsys_view->removeObj(dynamic_pointer_cast<GraphicObject>(shared_from_this()));
+        this->height = height;
+        gsys_view->addObj(dynamic_pointer_cast<GraphicObject>(shared_from_this()));
+    }
 }
 
 void GraphicObject::setDrawColor(SDL_Renderer *render, Color c)
@@ -117,7 +149,7 @@ void TextureObject::setTexture(SDL_Renderer *render, string filepath)
  */
 void TextureObject::scaleX(int x)
 {
-    size = base_size / base_size.x * x;
+    size = (base_size * x) / base_size.x;
 }
 
 /**
@@ -125,7 +157,7 @@ void TextureObject::scaleX(int x)
  */
 void TextureObject::scaleY(int y)
 {
-    size = base_size / base_size.y * y;
+    size = (base_size * y) / base_size.y;
 }
 
 void TextureObject::draw()
@@ -134,50 +166,6 @@ void TextureObject::draw()
     SDL_Rect dest = {global().x, global().y, size.x, size.y};
     if (SDL_RenderCopy(render_view, texture, NULL, &dest))
         std::cout << SDL_GetError() << '\n';
-}
-
-GraphicSystem::GraphicSystem()
-{
-    if (SDL_Init(SDL_INIT_VIDEO) != 0)
-    {
-        std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
-    }
-    window = SDL_CreateWindow("Window Name", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 840, SDL_WINDOW_SHOWN);
-    render = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    // SDL_SetRenderDrawColor(render, RGB_WHITE, 255);
-    // SDL_RenderClear(render);
-    // SDL_RenderPresent(render);
-}
-
-shared_ptr<TextureObject> GraphicSystem::loadTexture(string filepath)
-{
-    shared_ptr<TextureObject> texture = make_shared<TextureObject>();
-    texture->setTexture(render, filepath);
-    return texture;
-}
-
-void GraphicSystem::addObj(shared_ptr<GraphicObject> obj)
-{
-    obj->render_view = render;
-    bucket.insert(obj);
-}
-
-void GraphicSystem::removeObj(shared_ptr<GraphicObject> obj)
-{
-    bucket.erase(obj);
-}
-
-void GraphicSystem::update()
-{
-    SDL_SetRenderDrawColor(render, RGB_WHITE, 255);
-    SDL_RenderClear(render);
-    for (auto iter = bucket.begin(); iter != bucket.end(); iter++)
-    {
-        GraphicObject &obj = *iter->get();
-        obj.draw();
-    }
-    SDL_RenderPresent(render);
-    std::cout << "Frame end" << "\n";
 }
 
 void EngineController::init()

@@ -49,7 +49,6 @@ using std::dynamic_pointer_cast;
 using std::shared_ptr;
 using std::weak_ptr;
 
-
 class MyHandler : public Handler<KeyboardEvent>
 {
 public:
@@ -76,22 +75,21 @@ int main()
     SDL_Init(SDL_INIT_EVERYTHING);
     auto e = Engine::create();
 
-    auto texture = e->gsys->loadTexture("resources/placeholder.png");
-    texture->scaleX(100);
+    auto texture = e->gsys->loadTexture("resources/background_1.png");
+    texture->scaleX(400);
     e->addObj(texture);
 
     auto object = make_shared<Object>();
-    object->attachInitBehaviour( [](Object* self) {
+    object->attachInitBehaviour([&](Object* self) {
         self->addChild(make_shared<Object2D>());
         self->getChild(0)->
-            addChild(make_shared<GraphicObject>());
+            addChild(e->gsys->loadTexture("resources/bird_1.png"));
         self->getChild<GraphicObject>({0, 0})->
             offset = {200, 200};
-        self->getChild<GraphicObject>({0, 0})->
-            size = {50, 100};
-        self->getChild(0)->
-            addChild(make_shared<GraphicObject>(*self->getChild<GraphicObject>({0, 0})));
-        self->getChild<GraphicObject>({0, 1})->offset = {300, 300};
+        self->getChild<TextureObject>({0, 0})->
+            scaleX(200);
+        self->getChild<TextureObject>({0, 0})->
+            setDrawHeight(1);
         self->getEngine()->disp->addEventHandler(make_shared<MyHandler>(self->getChild<Object2D>(0)));
     });
 
@@ -99,7 +97,7 @@ int main()
         auto sprite = self->getChild<Object2D>(0);
         sprite->offset.x++;
     });
-    
+
     e->addObj(object);
 
     e->start();

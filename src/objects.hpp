@@ -13,6 +13,7 @@
 
 #include <clock.h>
 #include <vects.hpp>        // Mathematical vectors
+#include <graphic_system.hpp>
 
 #include <colors.h>
 
@@ -32,7 +33,6 @@ using std::enable_shared_from_this; // allows safe taking of shared_ptr<>(this) 
 
 class Engine;
 
-
 class Object : public std::enable_shared_from_this<Object>
 {
     friend Engine;
@@ -43,7 +43,7 @@ protected:
     function<void(Object*)> loop_behavior;
 public:
     weak_ptr<Engine> engine_view;
-    
+
     inline shared_ptr<Engine> getEngine()
     {
         return engine_view.lock();
@@ -106,14 +106,7 @@ class Object2D : virtual public Object
 {
 public:
     Vect2i offset; // offset relative to parent, or global position if root
-    const Vect2i global() // actual position, result of parent.global + offset
-    {
-        auto parent = dynamic_pointer_cast<Object2D>(parent_view.lock());
-        if(parent.get() == nullptr)
-            return offset;
-        else
-            return parent->global() + offset;
-    } 
+    const Vect2i global(); // actual position, result of parent.global + offset
     Vect2i base_size;
     Vect2i size;
     Vect2f scale;
@@ -125,8 +118,9 @@ class GraphicSystem;
 class GraphicObject : public Object2D
 {
     friend GraphicSystem;
-public:
+public: // TODO: protected later?
     SDL_Renderer* render_view; // due to SDL shenanigans, smart pointers are not an option
+    GraphicSystem* gsys_view; 
     enum Color
     {
         RED,
@@ -134,7 +128,19 @@ public:
         BLUE
     };
     Color color = RED;
+    int height = 0; ///< also called z, sets draw height/draw order for objects occupying the same space.
+public:
+
+    /**
+     * @brief Set the draw Height of the object. When objects are occupying the same space,
+     * the object with the largest height will be drawn above the rest. 
+     * 
+     * @param height 
+     */
+    void setDrawHeight(const int& height);
+
     static void setDrawColor(SDL_Renderer *render, Color c);
+    
     virtual void draw();
 };
 
@@ -147,7 +153,7 @@ class TextureObject : public GraphicObject
     SDL_Texture* texture;
 public:
     void setTexture(SDL_Renderer* render, string filepath);
-    
+
     /**
      * @brief Scale size to have a width of 'x'
      */
@@ -159,25 +165,6 @@ public:
     void scaleY(int y);
 
     void draw() override;
-};
-
-class GraphicSystem
-{
-public:
-    SDL_Renderer *render;
-    SDL_Window *window;
-    unordered_set<shared_ptr<GraphicObject>> bucket;
-    
-    GraphicSystem();
-    
-    shared_ptr<TextureObject> loadTexture(string filepath);
-    
-    void addObj(shared_ptr<GraphicObject> obj);
-    
-    void removeObj(shared_ptr<GraphicObject> obj);
-
-    void update();
-
 };
 
 class EngineController : public Object
