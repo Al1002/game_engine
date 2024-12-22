@@ -25,6 +25,7 @@ std::shared_ptr<Engine> Engine::create()
     auto shared = shared_ptr<Engine>(e);
     e->view = weak_ptr<Engine>(shared);
     e->gsys = new GraphicSystem;
+    e->gsys->workers = &e->workers; // FIXME
     e->disp = new EventDispatcher;
     EngineController *controler = new EngineController;
     controler->init();
@@ -41,6 +42,7 @@ void Engine::start()
     }
     stop = false;
     tick_delay = 1.0 / 60;
+    //tick_delay = 0; // test at max run speed
     while (!stop)
     {
         // update hardware events
@@ -59,8 +61,12 @@ void Engine::start()
                     disp->addEvent(event);
             }
         }
-        clock.delta_time(tick_delay);
-        updateAll();
+        auto delta = clock.delta_time(tick_delay);
+        std::cout << string() + "Delta: (" + std::to_string(delta) + ")" << '\n';
+        this->update(delta);
+        disp->dispatch();
+        gsys->update();
+        std::cout << "Tick end" << "\n\n";
     }
     run.unlock();
 }
@@ -117,34 +123,20 @@ void Engine::removeObjRecursive(shared_ptr<Object> &obj)
     bucket.erase(obj);
 }
 
-/**
- * @brief
- *
- */
-void Engine::updateAll()
-{
-    this->update();
-    disp->dispatch();
-    gsys->update();
-    std::cout << "Tick end" << "\n\n";
-}
-
-void Engine::update()
+void Engine::update(double delta)
 {
     // loops
     for (auto iter = bucket.begin(); iter != bucket.end(); iter++)
     {
-        workers.enqueue(std::bind(&Object::loop, *iter));
+        workers.enqueue(std::bind(&Object::loop, *iter, delta));
     }
 }
 
-void EngineController::loop()
+void EngineController::loop(double delta)
 {
-    static Clock delta_c;
-    double delta = delta_c.delta_time();
     double time = timeout.get_time();
-    std::cout << string() + "Lifetime: " + std::to_string(time) + " (" + std::to_string(delta) + ")" << '\n';
-    if (time > 30)
+    std::cout << string() + "Time: " + std::to_string(time) + "\n";
+    if (time > 120)
     {
         auto shared_engine = engine_view.lock();
         if (!shared_engine)

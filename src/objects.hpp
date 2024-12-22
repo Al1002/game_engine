@@ -40,7 +40,7 @@ protected:
     weak_ptr<Object> parent_view;
     list<shared_ptr<Object>> children;
     function<void(Object*)> init_behavior;
-    function<void(Object*)> loop_behavior;
+    function<void(Object*, double)> loop_behavior;
 public:
     weak_ptr<Engine> engine_view;
 
@@ -51,7 +51,7 @@ public:
 
     virtual void init();
     
-    virtual void loop();
+    virtual void loop(double delta);
     
     void addChild(shared_ptr<Object> child);
     
@@ -97,18 +97,18 @@ public:
      * 
      * @param behaviour 
      */
-    void attachLoopBehaviour(function<void(Object*)> behavior);
+    void attachLoopBehaviour(function<void(Object*, double)> behavior);
 
     //avoid attachEventHandler(shared_ptr);
 };
 
-class Object2D : virtual public Object
+class Object2D : public Object
 {
 public:
-    Vect2i offset; // offset relative to parent, or global position if root
-    const Vect2i global(); // actual position, result of parent.global + offset
-    Vect2i base_size;
-    Vect2i size;
+    Vect2f offset; // offset relative to parent, or global position if root
+    const Vect2f global(); // actual position, result of parent.global + offset
+    Vect2f base_size;
+    Vect2f size;
     Vect2f scale;
 
 };
@@ -165,13 +165,19 @@ public:
     void scaleY(int y);
 
     void draw() override;
+    
+    // TODO: move to .cpp file
+    ~TextureObject()
+    {
+        SDL_DestroyTexture(texture);
+    }
 };
 
 class EngineController : public Object
 {
     Clock timeout;
 public:
-    void init();
+    void init() override;
     
-    void loop();
+    void loop(double delta) override;
 };

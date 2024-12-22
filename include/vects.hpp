@@ -71,6 +71,13 @@ public:
     {
         return other.x == x && other.y == y;
     }
+
+    template <typename N = Num>
+    inline N length() const
+    {
+        // only exists for sqrt valid types, SFINAE
+        return sqrt(x * x + y * y);
+    }
 };
 namespace std {
     template <typename Num>

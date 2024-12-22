@@ -17,10 +17,10 @@ void Object::init()
         init_behavior(this);
 }
 
-void Object::loop()
+void Object::loop(double delta)
 {
     if (loop_behavior)
-        loop_behavior(this);
+        loop_behavior(this, delta);
 }
 
 void Object::addChild(shared_ptr<Object> child)
@@ -73,12 +73,12 @@ void Object::attachInitBehaviour(function<void(Object *)> behavior)
  *
  * @param behaviour
  */
-void Object::attachLoopBehaviour(std::function<void(Object *)> behavior)
+void Object::attachLoopBehaviour(function<void(Object *, double)> behavior)
 {
     this->loop_behavior = behavior;
 }
 
-const Vect2i Object2D::global() // actual position, result of parent.global + offset
+const Vect2f Object2D::global() // actual position, result of parent.global + offset
 {
     auto parent = dynamic_pointer_cast<Object2D>(parent_view.lock());
     if (parent.get() == nullptr)
@@ -131,16 +131,21 @@ void GraphicObject::setDrawColor(SDL_Renderer *render, Color c)
 void GraphicObject::draw()
 {
     setDrawColor(render_view, color);
-    SDL_Rect r = {global().x, global().y, size.x, size.y};
+    SDL_Rect r = {(int)global().x, (int)global().y, (int)size.x, (int)size.y};
     SDL_RenderFillRect(render_view, &r);
 }
 
 void TextureObject::setTexture(SDL_Renderer *render, string filepath)
 {
     texture = IMG_LoadTexture(render, filepath.c_str());
-    if (!texture)
-        std::cout << IMG_GetError() << '\n';
-    SDL_QueryTexture(texture, NULL, NULL, &base_size.x, &base_size.y);
+    if (texture == NULL)
+    {
+        std::cout << "Failed to load texture: " << IMG_GetError() << '\n';
+        throw 42;
+    }
+    int x, y;
+    SDL_QueryTexture(texture, NULL, NULL, &x, &y);
+    base_size = Vect2f(x, y); // implicit type conversion int -> float
     size = base_size;
 }
 
@@ -162,9 +167,11 @@ void TextureObject::scaleY(int y)
 
 void TextureObject::draw()
 {
-    int w, h;
-    SDL_Rect dest = {global().x, global().y, size.x, size.y};
+    SDL_Rect dest = {(int)global().x, (int)global().y, (int)size.x, (int)size.y};
+    //if (SDL_RenderCopyEx(render_view, texture, NULL, &dest, 0, NULL, SDL_FLIP_NONE))
     if (SDL_RenderCopy(render_view, texture, NULL, &dest))
+    // TODO: copy ex supports hardware acceld rotation in the last 3 params
+    // which we currently do not support
         std::cout << SDL_GetError() << '\n';
 }
 

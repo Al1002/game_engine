@@ -91,11 +91,5 @@ public:
 
     void removeObjRecursive(shared_ptr<Object> &obj);
 
-    /**
-     * @brief 
-     * 
-     */
-    void updateAll();
-
-    void update();
+    void update(double delta);
 };

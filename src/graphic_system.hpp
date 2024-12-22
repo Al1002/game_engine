@@ -27,6 +27,7 @@ class GraphicSystem
 public:
     SDL_Renderer *render;
     SDL_Window *window;
+    thread_pool::dynamic_pool *workers; // FIXME, this is a view
 
     /**
      * Bucket for graphic objects, stored along their draw height/z.
