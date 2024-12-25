@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include <functional>
 #include <string>
+#include <map>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -21,6 +22,7 @@ using std::list;
 using std::string;
 using std::function;
 using std::unordered_set;
+using std::map;
 
 using std::move;
 using std::make_shared;
@@ -33,6 +35,7 @@ using std::enable_shared_from_this; // allows safe taking of shared_ptr<>(this) 
 
 class Engine;
 
+
 class Object : public std::enable_shared_from_this<Object>
 {
     friend Engine;
@@ -44,27 +47,35 @@ protected:
 public:
     weak_ptr<Engine> engine_view;
 
+
     inline shared_ptr<Engine> getEngine()
     {
         return engine_view.lock();
     }
 
+
     virtual void init();
-    
+
+
     virtual void loop(double delta);
-    
+
+
     void addChild(shared_ptr<Object> child);
-    
+
+
     template<typename T>
     inline void addChild(shared_ptr<T> child)
     {
         addChild(static_pointer_cast<Object>(child));
     }
 
+
     shared_ptr<Object> getChild(int index);
-    
-    shared_ptr<Object> getChild(const std::vector<int>& indices);
-    
+
+
+    shared_ptr<Object> getChild(std::vector<int> indices);
+
+
     template<typename T>
     inline shared_ptr<T> getChild(int index)
     {
@@ -75,11 +86,12 @@ public:
     }
     
     template<typename T>
-    inline shared_ptr<T> getChild(const std::vector<int>& indices)
+    inline shared_ptr<T> getChild(std::vector<int> indices)
     {
         return dynamic_pointer_cast<T>(getChild(indices));
     }
-    
+
+
     inline void operator[](int index)
     {
         getChild(index);
@@ -102,25 +114,41 @@ public:
     //avoid attachEventHandler(shared_ptr);
 };
 
+
 class Object2D : public Object
 {
 public:
-    Vect2f offset; // offset relative to parent, or global position if root
-    const Vect2f global(); // actual position, result of parent.global + offset
-    Vect2f base_size;
-    Vect2f size;
-    Vect2f scale;
+    Vect2f offset; ///< offset relative to parent, or global position if root
+    const Vect2f global(); ///< actual position, result of parent.global + offset
+    Vect2f base_size; ///< the 'original' size of the object, can be used to remove scaling  
+    Vect2f size; ///< actual size of the object
+    // TODO: rotation and rotational inheritance
+
+    /**
+     * @brief Construct a new Object2D 
+     * 
+     */
+    Object2D();
+
+    /**
+     * @brief Construct a new Object2D
+     * 
+     * @param offset 
+     * @param base_size 
+     */
+    Object2D(Vect2f offset, Vect2f base_size);
 
 };
 
 class GraphicSystem;
 
+
 class GraphicObject : public Object2D
 {
     friend GraphicSystem;
 public: // TODO: protected later?
-    SDL_Renderer* render_view; // due to SDL shenanigans, smart pointers are not an option
-    GraphicSystem* gsys_view; 
+    SDL_Renderer* render_view = nullptr; // due to SDL shenanigans, smart pointers are not an option
+    GraphicSystem* gsys_view = nullptr;
     enum Color
     {
         RED,
@@ -132,27 +160,104 @@ public: // TODO: protected later?
 public:
 
     /**
+     * @brief Construct a new GraphicObject
+     * 
+     */
+    GraphicObject();
+
+    /**
+     * @brief Construct a new GraphicObject
+     * 
+     * @param offset 
+     * @param base_size 
+     */
+    GraphicObject(Vect2f offset, Vect2f base_size);
+
+    /**
      * @brief Set the draw Height of the object. When objects are occupying the same space,
      * the object with the largest height will be drawn above the rest. 
      * 
      * @param height 
      */
-    void setDrawHeight(const int& height);
+    void setDrawHeight(int height);
+
 
     static void setDrawColor(SDL_Renderer *render, Color c);
-    
+
+
     virtual void draw();
 };
 
+class Sprite;
+
 /**
- * @brief Graphic object displaying a texture.
+ * @brief Object representing texture data. Can be used to build sprites.
  * 
  */
-class TextureObject : public GraphicObject
+class Texture : public Object
 {
-    SDL_Texture* texture;
+    SDL_Texture *texture;
+    Vect2i size;
+    map<string, Sprite> sprites;
 public:
+    /**
+     * @brief Set the internal SDL_Texture
+     * 
+     * @param render SDL_Renderer
+     * @param filepath File from which to load the image. Relative path is relative to executable location.
+     */
     void setTexture(SDL_Renderer* render, string filepath);
+
+    /**
+     * @brief Get the internal SDL_Texture, do not use unless you know what you're doing
+     * 
+     * @return SDL_Texture* pointer to the internal SDL_Texture, guaranteed to be valid for the lifetime of the `Texture` object
+     */
+    SDL_Texture* getTexture();
+
+    /**
+     * @brief Adds a sprite definition to the atlas. This can be used to then produce that sprite.
+     * 
+     */
+    void defineSprite(Vect4i src_region, string name);
+
+    /**
+     * @brief Creates a sprite previously defined by `defineSprite`
+     * 
+     * @param name the name given to the sprite in `defineSprite`
+     * @return shared_ptr<Sprite> 
+     */
+    shared_ptr<Sprite> buildSprite(string name);
+
+    /**
+     * @brief Destroy the Texture object
+     * 
+     */
+    ~Texture();
+};
+
+
+class Sprite : public GraphicObject
+{
+    shared_ptr<Texture> texture; ///< Texture for the sprite to use
+    SDL_Rect src_region; ///< The region of the underlying texture this sprite uses
+public:
+
+    /**
+     * @brief Construct a new Sprite object
+     * 
+     */
+    Sprite();
+
+    /**
+     * @brief Construct a new Sprite object
+     * 
+     * @param texture the texture to be used by the sprite
+     * @param src_region the region from the texture to be used by the sprite
+     * @param offset offset of the sprite
+     * @param size size of the sprite
+     */
+    Sprite(shared_ptr<Texture> texture, Vect4i src_region, Vect2f offset, Vect2f size);
 
     /**
      * @brief Scale size to have a width of 'x'
@@ -164,14 +269,13 @@ public:
      */
     void scaleY(int y);
 
+    /**
+     * @brief Draw the sprite
+     * 
+     */
     void draw() override;
-    
-    // TODO: move to .cpp file
-    ~TextureObject()
-    {
-        SDL_DestroyTexture(texture);
-    }
 };
+
 
 class EngineController : public Object
 {

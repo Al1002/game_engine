@@ -55,7 +55,7 @@ class Engine
     friend EngineController;
     
     weak_ptr<Engine> view;
-    thread_pool::dynamic_pool workers;
+    thread_pool::static_pool workers;
     unordered_set<shared_ptr<Object>> root_objects;
     unordered_set<shared_ptr<Object>> bucket;
     double tick_delay; // minimum time between updates
@@ -69,19 +69,22 @@ public:
     GraphicSystem *gsys;
     EventDispatcher *disp;
 
+
     static std::shared_ptr<Engine> create();
 
+
     void start();
-    
+
     /**
      * @brief Add root object
      * 
      * @param obj 
      */
     void addObj(shared_ptr<Object> obj);
-    
+
+
     void removeObj(shared_ptr<Object> obj);
-    
+
     /**
      * @brief Add object to processing wake up list
      * 
@@ -89,7 +92,15 @@ public:
      */
     void addObjRecursive(shared_ptr<Object> &obj);
 
+
     void removeObjRecursive(shared_ptr<Object> &obj);
+
 
     void update(double delta);
 };
+
+/**
+ * TODO: objects can either be tracked or added to the scene root.
+ * One does not imply the other
+ * 
+ */

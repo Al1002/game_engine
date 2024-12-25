@@ -20,14 +20,13 @@ using std::shared_ptr;
 
 class GraphicObject;
 
-class TextureObject;
+class Texture;
 
 class GraphicSystem
 {
 public:
     SDL_Renderer *render;
     SDL_Window *window;
-    thread_pool::dynamic_pool *workers; // FIXME, this is a view
 
     /**
      * Bucket for graphic objects, stored along their draw height/z.
@@ -37,7 +36,7 @@ public:
     
     GraphicSystem(); 
     
-    shared_ptr<TextureObject> loadTexture(string filepath);
+    shared_ptr<Texture> loadTexture(string filepath);
     
     void addObj(shared_ptr<GraphicObject> obj);
     

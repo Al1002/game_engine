@@ -11,6 +11,7 @@
 
 #include <engine.hpp>
 
+
 shared_ptr<Event> HardwareEventBuilder::build(SDL_Event e)
 {
     if (e.type == SDL_KEYDOWN)
@@ -19,19 +20,21 @@ shared_ptr<Event> HardwareEventBuilder::build(SDL_Event e)
         return shared_ptr<Event>();
 }
 
+
 std::shared_ptr<Engine> Engine::create()
 {
     auto e = new Engine;
     auto shared = shared_ptr<Engine>(e);
     e->view = weak_ptr<Engine>(shared);
     e->gsys = new GraphicSystem;
-    e->gsys->workers = &e->workers; // FIXME
+    //e->gsys->workers = &e->workers; // FIXME
     e->disp = new EventDispatcher;
     EngineController *controler = new EngineController;
     controler->init();
     e->addObj(shared_ptr<Object>(controler));
     return shared;
 }
+
 
 void Engine::start()
 {
@@ -63,10 +66,11 @@ void Engine::start()
         }
         auto delta = clock.delta_time(tick_delay);
         std::cout << string() + "Delta: (" + std::to_string(delta) + ")" << '\n';
+        std::cout << "Tick start\n";
         this->update(delta);
         disp->dispatch();
         gsys->update();
-        std::cout << "Tick end" << "\n\n";
+        std::cout << "Tick end\n\n";
     }
     run.unlock();
 }
@@ -79,9 +83,11 @@ void Engine::start()
 void Engine::addObj(shared_ptr<Object> obj)
 {
     obj->engine_view = weak_ptr<Engine>(view);
-    root_objects.insert(obj);
+    if(obj->parent_view.lock() == nullptr)
+        root_objects.insert(obj);
     addObjRecursive(obj);
 }
+
 
 void Engine::removeObj(shared_ptr<Object> obj)
 {
@@ -109,6 +115,7 @@ void Engine::addObjRecursive(shared_ptr<Object> &obj)
     }
 }
 
+
 void Engine::removeObjRecursive(shared_ptr<Object> &obj)
 {
     for (auto iter = obj->children.begin(); iter != obj->children.end(); iter++)
@@ -123,14 +130,16 @@ void Engine::removeObjRecursive(shared_ptr<Object> &obj)
     bucket.erase(obj);
 }
 
+
 void Engine::update(double delta)
 {
     // loops
     for (auto iter = bucket.begin(); iter != bucket.end(); iter++)
     {
-        workers.enqueue(std::bind(&Object::loop, *iter, delta));
+        (*iter)->loop(delta);
     }
 }
+
 
 void EngineController::loop(double delta)
 {
