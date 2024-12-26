@@ -35,6 +35,7 @@
 #include <events.hpp>
 #include <engine.hpp>
 
+// general ADTs
 using std::list;
 using std::map;
 using std::mutex;
@@ -44,14 +45,14 @@ using std::unordered_multimap;
 using std::unordered_set;
 using std::vector;
 
-using std::dynamic_pointer_cast;
+// smart pointer relevant
+using std::shared_ptr;
+using std::weak_ptr;
+using std::static_pointer_cast;
+using std::dynamic_pointer_cast; 
 using std::make_shared;
 using std::make_unique;
 using std::move;
-using std::shared_ptr;
-using std::static_pointer_cast;
-using std::weak_ptr;
-
 
 
 class GravityObject : public Object2D
