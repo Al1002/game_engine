@@ -21,6 +21,7 @@
 #include <list>          // s.e.
 #include <unordered_set> // hash table
 #include <map>
+#include <random>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_main.h> //
@@ -34,6 +35,7 @@
 #include <objects.hpp>
 #include <events.hpp>
 #include <engine.hpp>
+
 
 // general ADTs
 using std::list;
@@ -54,12 +56,17 @@ using std::make_shared;
 using std::make_unique;
 using std::move;
 
+//
+class Box : public Object2D
+{
+
+};
 
 class GravityObject : public Object2D
 {
 public:
     Vect2f accel;
-    Vect2f gravity = Vect2f(0, 1200);
+    Vect2f gravity = Vect2f(0, 2000);
     float terminal_velocity = 600;
     void loop(double delta) override
     {
@@ -105,47 +112,78 @@ public:
     void handle(shared_ptr<KeyboardEvent> e) override
     {
         if (e->sdl_event.keysym.sym == 'a')
-            // that->accel += Vect2f(-100, 0);
-            that->accel.x = -600;
+            //that->accel.x = -600;
+            0 == 0;
         if (e->sdl_event.keysym.sym == 'd')
-            // that->accel += Vect2f(100, 0);
-            that->accel.x = 600;
+            //that->accel.x = 600;
+            0 == 0;
         if (e->sdl_event.keysym.sym == 'w')
-            // that->accel += Vect2f(0, -100);
             that->accel.y = -600;
         if (e->sdl_event.keysym.sym == 's')
-            // that->accel += Vect2f(0, 100);
             that->accel.y = 600;
+    }
+};
+
+class PipeSpawner : public Object2D
+{
+public:
+    Clock time;
+
+    void loop(double delta) override
+    {
+        if(time.get_time() < 2.5)
+            return;
+        time.start_timer();
+
+        add(make_shared<Object2D>());
+        get(0)->add(getEngine()->get<Texture>(0)->buildSprite("green_pipe_bellow"));
+        get<Sprite>({0,0})->scaleX(100);
+        get<Sprite>({0,0})->offset = {-50, 75};
+        get(0)->add(getEngine()->get<Texture>(0)->buildSprite("green_pipe_above"));
+        get<Sprite>({0,1})->scaleX(100);
+        get<Sprite>({0,1})->offset = {-50, -75 - get<Sprite>({0,1})->size().y};
+        get<Object2D>(0)->offset = {500, 200 + (float)(rand() % 200)};
+        get(0)->attachLoopBehaviour([](Object *self, double delta){
+            shared_ptr<Object2D> t_self = static_pointer_cast<GravityObject>(self->shared_from_this());
+            t_self->offset.x -= 100 * delta;
+            if(t_self->offset.x < -100)
+                0 == 0; // remove self from scene
+        });
+        getEngine()->add(removeChild(0));
     }
 };
 
 int main()
 {
+    srand(time(NULL)); // seed rand with current time
     // TODO: deepcpy for object cloning, analog to packed scenes in godot
     // TODO: due to smart pointer lambda shenanigans, a decent chunk of code is ugly template casts
     // this is simply a byproduct of c++ smart pointers not being part of the grammar (why?!)
     // as such im considering #defs as a fix 
     
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
-    auto e = Engine::create();
+    auto e = make_shared<Engine>(Vect2i(400, 720));
 
-    // backround
-    auto texture = e->gsys->loadTexture("./resources/flappy_sprite_sheet.png");
-    texture->defineSprite({0, 0, 128, 256}, "background");
-    texture->defineSprite({0, 511 - 24, 24, 24}, "bird");
+    // sprites, sizes gotten with brute force guessing
+    e->add(e->gsys->loadTexture("./resources/flappy_sprite_sheet.png"));
+    e->get<Texture>(0)->defineSprite({0, 0, 144, 256}, "background");
+    e->get<Texture>(0)->defineSprite({0, 512 - 28, 28, 28}, "bird");
+    e->get<Texture>(0)->defineSprite({28 * 2, 512 - 190, 28 * 1, 162}, "green_pipe_above");
+    e->get<Texture>(0)->defineSprite({28 * 3, 512 - 190, 28 * 1, 162}, "green_pipe_bellow");
     
-    auto sprite = texture->buildSprite("background");
-    sprite->scaleX(400);
-    e->addObj(sprite);
+    // backround
+    e->add(e->get<Texture>(0)->buildSprite("background"));
+    e->get<Sprite>(1)->scaleY(720);
+    e->get<Sprite>(1)->setDrawHeight(-1);
 
     // bird
     auto object = make_shared<GravityObject>();
-    object->attachInitBehaviour([&](Object *self){
-        static_cast<GravityObject*>(self)->offset = {200, 200};
-        auto sprite = texture->buildSprite("bird");
-        sprite->scaleX(100);
+    object->attachInitBehaviour([](Object *self){
+        static_cast<GravityObject*>(self)->offset = {100, 300};
+        auto sprite = self->getEngine()->get<Texture>(0)->buildSprite("bird");
+        sprite->scaleX(84);
         sprite->setDrawHeight(1);
-        self->addChild(sprite);
+        self->add(sprite);
         self->getEngine()->disp->addEventHandler(make_shared<FixedAccelHandler>(static_pointer_cast<GravityObject>(self->shared_from_this())));
     });
 
@@ -155,10 +193,10 @@ int main()
             t_self->offset.y = 500;
     });
 
-    e->addObj(object);
+    e->add(object);
 
-    // pipe
-    
+    // pipes
+    e->add(make_shared<PipeSpawner>());
     e->start();
     SDL_Quit();
     return 0;

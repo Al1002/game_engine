@@ -59,23 +59,65 @@ public:
 
     virtual void loop(double delta);
 
-
+    /**
+     * @brief Add child to the object. Child is appended to the back of the child list.
+     * 
+     * @param child child object
+     */
     void addChild(shared_ptr<Object> child);
 
-
+    /**
+     * @brief Add child to the object. Child is appended to the back of the child list. Accepts any object.
+     * 
+     * @tparam T child type
+     * @param child child object
+     */
     template<typename T>
     inline void addChild(shared_ptr<T> child)
     {
         addChild(static_pointer_cast<Object>(child));
     }
 
+    /**
+     * @brief Short alias for addChild.
+     * 
+     * @param child child object
+     */
+    inline void add(shared_ptr<Object> child)
+    {
+        addChild(child);
+    }
 
+    /**
+     * @brief Get child by index.
+     * 
+     * @param index position of the child in the child list
+     * @return shared_ptr<Object>
+     * @throws out_of_range exception if the child index is out of range 
+     */
     shared_ptr<Object> getChild(int index);
 
+    /**
+     * @brief Short alias for getChild().
+     * 
+     * @param index position of the child in the child list
+     * @return shared_ptr<Object>
+     * @throws out_of_range exception if the child index is out of range 
+     */
+    inline shared_ptr<Object> get(int index)
+    {
+        return getChild(index);
+    }
 
-    shared_ptr<Object> getChild(std::vector<int> indices);
-
-
+    /**
+     * @brief Get child by index, downcast to the template type.
+     * 
+     * @param index position of the child in the child list
+     * @tparam T the type to downcast the child to
+     * @return shared_ptr<Object>
+     * @throws std::out_of_range exception if the child index is out of range
+     * @throws  exception if the type is not an ancestor of the child's actual type
+     */
     template<typename T>
     inline shared_ptr<T> getChild(int index)
     {
@@ -84,19 +126,75 @@ public:
             throw "Child not of specified class";
         return child;
     }
-    
+
+    /**
+     * @brief Short alias for getChild.
+     * 
+     * @param index position of the child in the child list
+     * @tparam T the type to downcast the child to
+     * @return shared_ptr<Object>
+     * @throws std::out_of_range exception if the child index is out of range
+     * @throws  exception if the type is not an ancestor of the child's actual type
+     */
+    template<typename T>
+    inline shared_ptr<T> get(int index)
+    {
+        return getChild<T>(index);
+    }
+
+
+    shared_ptr<Object> getChild(std::vector<int> indices);
+
+    /**
+     * @brief Short alias for getChild
+     * 
+     * @param indices 
+     * @return shared_ptr<Object> 
+     */
+    inline shared_ptr<Object> get(std::vector<int> indices)
+    {
+        return getChild(indices);
+    }
+
+
     template<typename T>
     inline shared_ptr<T> getChild(std::vector<int> indices)
     {
         return dynamic_pointer_cast<T>(getChild(indices));
     }
 
-
-    inline void operator[](int index)
+    /**
+     * @brief Short alias of getChild
+     * 
+     * @tparam T 
+     * @param indices 
+     * @return shared_ptr<T> 
+     */
+    template<typename T>
+    inline shared_ptr<T> get(std::vector<int> indices)
     {
-        getChild(index);
+        return getChild<T>(indices);
     }
 
+    /**
+     * @brief Remove child by index.
+     * 
+     * @param index position of the child in the child list
+     * @return shared_ptr<Object> the removed child
+     * @throws out_of_range exception if the child index is out of range 
+     */
+    shared_ptr<Object> removeChild(int index)
+    {
+        if (children.size() <= index)
+            throw std::out_of_range("Index out of range");
+        auto iter = children.begin();
+        std::advance(iter, index);
+        (*iter)->parent_view.reset();
+        (*iter)->engine_view.reset();
+        children.remove(*iter);
+        return *iter;
+    }
+    // TODO FIXME       ^^^
     /**
      * @brief A callable which is called in the object's loop
      * 
@@ -119,10 +217,14 @@ class Object2D : public Object
 {
 public:
     Vect2f offset; ///< offset relative to parent, or global position if root
-    const Vect2f global(); ///< actual position, result of parent.global + offset
+    const Vect2f position(); ///< actual position, result of parent.position + offset
+    
     Vect2f base_size; ///< the 'original' size of the object, can be used to remove scaling  
-    Vect2f size; ///< actual size of the object
-    // TODO: rotation and rotational inheritance
+    float scale = 1;      ///< factor by which to scale the object
+    const Vect2f size(); ///< actual size of the object, scale effected by parrent
+    
+    Vect2f rotation; ///< rotation relative to the parent
+    const Vect2f orientation(){return {0,0};};
 
     /**
      * @brief Construct a new Object2D 

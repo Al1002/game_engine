@@ -31,7 +31,7 @@ void Object::addChild(shared_ptr<Object> child)
     child->parent_view = weak_ptr<Object>(shared_from_this());
     auto engine = getEngine();
     if (engine != nullptr)
-        engine->addObj(child);
+        engine->registerObj(child);
 }
 
 shared_ptr<Object> Object::getChild(int index)
@@ -81,13 +81,22 @@ void Object::attachLoopBehaviour(function<void(Object *, double)> behavior)
     this->loop_behavior = behavior;
 }
 
-const Vect2f Object2D::global() // actual position, result of parent.global + offset
+const Vect2f Object2D::position() 
 {
     auto parent = dynamic_pointer_cast<Object2D>(parent_view.lock());
     if (parent.get() == nullptr)
         return offset;
     else
-        return parent->global() + offset;
+        return parent->position() + offset;
+}
+
+const Vect2f Object2D::size() 
+{
+    auto parent = dynamic_pointer_cast<Object2D>(parent_view.lock());
+    if (parent.get() == nullptr)
+        return base_size * scale;
+    else
+        return base_size * (scale * parent->scale);
 }
 
 /**
@@ -108,7 +117,7 @@ Object2D::Object2D(Vect2f offset, Vect2f base_size)
 {
     this->offset = offset;
     this->base_size = base_size;
-    size = base_size;
+    this->scale = 1;
 }
 
 /**
@@ -182,7 +191,7 @@ void GraphicObject::setDrawColor(SDL_Renderer *render, Color c)
 void GraphicObject::draw()
 {
     setDrawColor(render_view, color);
-    SDL_Rect r = {(int)global().x, (int)global().y, (int)size.x, (int)size.y};
+    SDL_Rect r = {(int)position().x, (int)position().y, (int)size().x, (int)size().y};
     SDL_RenderFillRect(render_view, &r);
 }
 
@@ -267,7 +276,7 @@ Sprite::Sprite(shared_ptr<Texture> texture, Vect4i src_region, Vect2f offset, Ve
  */
 void Sprite::scaleX(int x)
 {
-    size = (base_size * x) / base_size.x;
+    scale = x / base_size.x;
 }
 
 /**
@@ -275,7 +284,7 @@ void Sprite::scaleX(int x)
  */
 void Sprite::scaleY(int y)
 {
-    size = (base_size * y) / base_size.y;
+    scale = y / base_size.y;
 }
 
 /**
@@ -284,9 +293,8 @@ void Sprite::scaleY(int y)
  */
 void Sprite::draw()
 {
-    SDL_Rect dest = {(int)global().x, (int)global().y, (int)size.x, (int)size.y};
-    // if (SDL_RenderCopyEx(render_view, texture, &src_region, &dest, 0, NULL, SDL_FLIP_NONE))
-    if (SDL_RenderCopy(render_view, texture->getTexture(), &src_region, &dest))
+    SDL_Rect dest = {(int)position().x, (int)position().y, (int)size().x, (int)size().y};
+    if (SDL_RenderCopyEx(render_view, texture->getTexture(), &src_region, &dest, 0, NULL, SDL_FLIP_NONE))
         // TODO: copy ex supports hardware acceld rotation in the last 3 params
         // which we currently do not support
         std::cout << SDL_GetError() << '\n';

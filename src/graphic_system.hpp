@@ -24,9 +24,9 @@ class Texture;
 
 class GraphicSystem
 {
-public:
     SDL_Renderer *render;
     SDL_Window *window;
+public:
 
     /**
      * Bucket for graphic objects, stored along their draw height/z.
@@ -34,7 +34,7 @@ public:
      */
     set<pair<int, shared_ptr<GraphicObject>>> bucket;
     
-    GraphicSystem(); 
+    GraphicSystem(Vect2i window_size);
     
     shared_ptr<Texture> loadTexture(string filepath);
     

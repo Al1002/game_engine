@@ -2,9 +2,9 @@
 
 class GraphicObject; 
 
-GraphicSystem::GraphicSystem()
+GraphicSystem::GraphicSystem(Vect2i window_size)
 {
-    window = SDL_CreateWindow("Window Name", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 720, SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow("Window Name", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_size.x, window_size.y, SDL_WINDOW_SHOWN);
     render = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 }
 

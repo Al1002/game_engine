@@ -50,57 +50,101 @@ public:
     static shared_ptr<Event> build(SDL_Event e);
 };
 
-class Engine
+class Engine : public std::enable_shared_from_this<Engine>
 {
     friend EngineController;
     
-    weak_ptr<Engine> view;
     thread_pool::static_pool workers;
-    unordered_set<shared_ptr<Object>> root_objects;
     unordered_set<shared_ptr<Object>> bucket;
-    double tick_delay; // minimum time between updates
+    shared_ptr<Object> root; ///< root object
+    double tick_delay;  // minimum time between updates
     std::mutex run;         // signifies the thread running the engine
     Clock clock;
     std::atomic<bool> stop; // set to true to stop engine
     std::mutex operation;   // can either be held when runing an update or changing engine settings
-    
-    Engine() {};
+    Vect2i window_size;
 public:
     GraphicSystem *gsys;
     EventDispatcher *disp;
 
 
-    static std::shared_ptr<Engine> create();
+    Engine(Vect2i window_size = {1024, 720});
 
 
     void start();
 
     /**
-     * @brief Add root object
+     * @brief Add object for updates and initialization
      * 
      * @param obj 
      */
-    void addObj(shared_ptr<Object> obj);
+    void registerObj(shared_ptr<Object> obj);
 
 
-    void removeObj(shared_ptr<Object> obj);
-
-    /**
-     * @brief Add object to processing wake up list
-     * 
-     * @param obj 
-     */
-    void addObjRecursive(shared_ptr<Object> &obj);
-
-
-    void removeObjRecursive(shared_ptr<Object> &obj);
+    void unregisterObj(shared_ptr<Object> obj);
 
 
     void update(double delta);
-};
 
-/**
- * TODO: objects can either be tracked or added to the scene root.
- * One does not imply the other
- * 
- */
+
+    // Composition with root object
+
+    template<typename T = Object>
+    inline void addChild(shared_ptr<T> child)
+    {
+        root->addChild<T>(child);
+        registerObj(child);
+    }
+
+    /**
+     * @brief Short alias for addChild.
+     * 
+     * @param child child object
+     */
+    inline void add(shared_ptr<Object> child)
+    {
+        addChild(child);
+    }
+
+
+    template<typename T = Object>
+    inline shared_ptr<T> getChild(int index)
+    {
+        return root->getChild<T>(index);
+    }
+
+    /**
+     * @brief Short alias for getChild().
+     * 
+     * @param index position of the child in the child list
+     * @return shared_ptr<Object>
+     * @throws out_of_range exception if the child index is out of range 
+     */
+    template<typename T = Object>
+    inline shared_ptr<T> get(int index)
+    {
+        return getChild<T>(index);
+    }
+
+
+    template<typename T = Object>
+    inline shared_ptr<T> getChild(std::vector<int> indices)
+    {
+        return root->getChild<T>(indices);
+    }
+
+    /**
+     * @brief Short alias for getChild.
+     * 
+     * @param index position of the child in the child list
+     * @tparam T the type to downcast the child to
+     * @return shared_ptr<Object>
+     * @throws std::out_of_range exception if the child index is out of range
+     * @throws  exception if the type is not an ancestor of the child's actual type
+     */
+    template<typename T>
+    inline shared_ptr<T> get(std::vector<int> indices)
+    {
+        return getChild<T>(indices);
+    }
+};
