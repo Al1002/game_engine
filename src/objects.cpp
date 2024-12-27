@@ -205,10 +205,7 @@ void Texture::setTexture(SDL_Renderer *render, string filepath)
 {
     texture = IMG_LoadTexture(render, filepath.c_str());
     if (texture == NULL)
-    {
-        std::cout << "Failed to load texture: " << IMG_GetError() << '\n';
-        throw 42;
-    }
+        throw std::runtime_error(string() + "Failed to load texture: " + IMG_GetError());
     SDL_QueryTexture(texture, NULL, NULL, &size.x, &size.y);
 }
 

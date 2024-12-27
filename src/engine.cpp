@@ -31,10 +31,7 @@ Engine::Engine(Vect2i window_size)
 void Engine::start()
 {
     if (!run.try_lock())
-    {
-        std::cerr << "Engine already running" << '\n';
-        throw std::exception();
-    }
+        throw std::runtime_error("Engine already running!"); 
     stop = false;
     tick_delay = 1.0 / 60;
     // tick_delay = 0; // test at max run speed

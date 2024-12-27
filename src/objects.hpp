@@ -123,7 +123,7 @@ public:
     {
         auto child = dynamic_pointer_cast<T>(getChild(index));
         if(child.get() == nullptr)
-            throw "Child not of specified class";
+            throw std::runtime_error("Child not of specified class");
         return child;
     }
 
