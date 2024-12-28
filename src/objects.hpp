@@ -287,7 +287,7 @@ public:
     static void setDrawColor(SDL_Renderer *render, Color c);
 
 
-    virtual void draw();
+    virtual void draw() = 0;
 };
 
 class Sprite;

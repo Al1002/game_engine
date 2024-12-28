@@ -24,3 +24,6 @@ general cmake was from the docs + personal experience
 
 set cwd in c++
 https://stackoverflow.com/a/40230786
+
+quad trees:
+https://www.youtube.com/watch?v=jxbDYxm-pXg

@@ -26,6 +26,8 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_main.h> //
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_mixer.h>
+
 #include <thread_pools.hpp>
 
 #include <vects.hpp> // Mathematical vectors
@@ -35,7 +37,7 @@
 #include <objects.hpp>
 #include <events.hpp>
 #include <engine.hpp>
-
+#include <audio_system.hpp>
 
 // general ADTs
 using std::list;
@@ -56,10 +58,16 @@ using std::make_shared;
 using std::make_unique;
 using std::move;
 
-//
-class Box : public Object2D
+class Button
 {
 
+};
+
+
+// 
+class Box : public Object2D
+{
+    
 };
 
 class GravityObject : public Object2D
@@ -101,15 +109,9 @@ public:
     }
 };
 
-class FixedAccelHandler : public Handler<KeyboardEvent>
+class BirdHandler : public ParentHandler<KeyboardEvent, GravityObject>
 {
-public:
-    shared_ptr<GravityObject> that;
-    FixedAccelHandler(shared_ptr<GravityObject> t)
-    {
-        that = t;
-    }
-    void handle(shared_ptr<KeyboardEvent> e) override
+    void handle(shared_ptr<KeyboardEvent> e, shared_ptr<GravityObject> parent) override
     {
         if (e->sdl_event.keysym.sym == 'a')
             //that->accel.x = -600;
@@ -118,9 +120,12 @@ public:
             //that->accel.x = 600;
             0 == 0;
         if (e->sdl_event.keysym.sym == 'w')
-            that->accel.y = -600;
+        {
+            parent->accel.y = -600;
+            parent->get<AudioPlayer>(1)->play();
+        }
         if (e->sdl_event.keysym.sym == 's')
-            that->accel.y = 600;
+            parent->accel.y = 600;
     }
 };
 
@@ -147,26 +152,27 @@ public:
             shared_ptr<Object2D> t_self = static_pointer_cast<GravityObject>(self->shared_from_this());
             t_self->offset.x -= 100 * delta;
             if(t_self->offset.x < -100)
-                0 == 0; // remove self from scene
+                ; // remove self from scene
         });
         getEngine()->add(removeChild(0));
     }
 };
 
+
 int main()
 {
-    srand(time(NULL)); // seed rand with current time
+    Engine::enable();
     // TODO: deepcpy for object cloning, analog to packed scenes in godot
-    // TODO: due to smart pointer lambda shenanigans, a decent chunk of code is ugly template casts
-    // this is simply a byproduct of c++ smart pointers not being part of the grammar (why?!)
-    // as such im considering #defs as a fix 
     
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
     auto e = make_shared<Engine>(Vect2i(400, 720));
+    //e->gsys->camera_zoom = 0.5;
+    //e->gsys->camera_pos = {-200, -360};
+    
 
     // sprites, sizes gotten with brute force guessing
     e->add(e->gsys->loadTexture("./resources/flappy_sprite_sheet.png"));
-    e->get<Texture>(0)->defineSprite({0, 0, 144, 256}, "background");
+    e->get<Texture>(0)->defineSprite({148 * 0, 0, 144, 256}, "background");
+    e->get<Texture>(0)->defineSprite({148 * 2, 0, 160, 56}, "floor");
     e->get<Texture>(0)->defineSprite({0, 512 - 28, 28, 28}, "bird");
     e->get<Texture>(0)->defineSprite({28 * 2, 512 - 190, 28 * 1, 162}, "green_pipe_above");
     e->get<Texture>(0)->defineSprite({28 * 3, 512 - 190, 28 * 1, 162}, "green_pipe_bellow");
@@ -174,7 +180,11 @@ int main()
     // backround
     e->add(e->get<Texture>(0)->buildSprite("background"));
     e->get<Sprite>(1)->scaleY(720);
-    e->get<Sprite>(1)->setDrawHeight(-1);
+    e->get<Sprite>(1)->setDrawHeight(-2);
+    e->add(e->get<Texture>(0)->buildSprite("floor"));
+    e->get<Sprite>(2)->scaleX(420);
+    e->get<Sprite>(2)->offset = {0, 580};
+    e->get<Sprite>(2)->setDrawHeight(1);
 
     // bird
     auto object = make_shared<GravityObject>();
@@ -182,15 +192,16 @@ int main()
         static_cast<GravityObject*>(self)->offset = {100, 300};
         auto sprite = self->getEngine()->get<Texture>(0)->buildSprite("bird");
         sprite->scaleX(84);
-        sprite->setDrawHeight(1);
+        sprite->setDrawHeight(2);
         self->add(sprite);
-        self->getEngine()->disp->addEventHandler(make_shared<FixedAccelHandler>(static_pointer_cast<GravityObject>(self->shared_from_this())));
+        self->add(make_shared<AudioPlayer>("resources/sfx_jump.mp3"));
+        self->add(make_shared<BirdHandler>());
     });
 
     object->attachLoopBehaviour([](Object *self, double delta){
         shared_ptr<GravityObject> t_self = static_pointer_cast<GravityObject>(self->shared_from_this());
-        if(t_self->offset.y > 500)
-            t_self->offset.y = 500;
+        if(t_self->offset.y > 520)
+            t_self->offset.y = 520;
     });
 
     e->add(object);
@@ -198,6 +209,7 @@ int main()
     // pipes
     e->add(make_shared<PipeSpawner>());
     e->start();
-    SDL_Quit();
+
+    Engine::disable();
     return 0;
 }

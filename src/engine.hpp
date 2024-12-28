@@ -18,6 +18,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_main.h> //
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_mixer.h>
 #include <thread_pools.hpp>
 
 #include <vects.hpp>        // Mathematical vectors
@@ -67,6 +68,34 @@ public:
     GraphicSystem *gsys;
     EventDispatcher *disp;
 
+    /**
+     * @brief Call before creating any engine objects. Enables SDL utilities and other global state required for the Engine class to work. 
+     * 
+     */
+    static int enable()
+    {
+        if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO) < 0)
+        {
+            std::cerr << "Failed to initialize SDL_subsystems: " << SDL_GetError() << '\n';
+            return 1;
+        }
+        if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 8, 2048) < 0)
+        {
+            std::cerr << "Failed to initialize SDL_mixer: " << Mix_GetError() << '\n';
+            return 1;
+        }
+        srand(time(NULL));
+    }
+
+    /**
+     * @brief Call after all engine objects are destroyed. Dissables SDL utilities and other global state required for the Engine class to work. 
+     * 
+     */
+    static void disable()
+    {
+        Mix_CloseAudio();
+        SDL_Quit();
+    }
 
     Engine(Vect2i window_size = {1024, 720});
 

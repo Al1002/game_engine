@@ -7,6 +7,7 @@ target_include_directories(engine PUBLIC .)
 target_link_libraries(engine PUBLIC SDL2)
 target_link_libraries(engine PUBLIC SDL2main)
 target_link_libraries(engine PUBLIC SDL2_image)
+target_link_libraries(engine PUBLIC SDL2_mixer)
 target_link_libraries(engine PRIVATE clock)
 
 add_executable(main main.cpp)

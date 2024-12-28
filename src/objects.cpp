@@ -154,9 +154,9 @@ void GraphicObject::setDrawHeight(int height)
         // while not nescessary per se, we set the height only after the object is out of the set
         // we technically dont have ownership until the object is outside the queue
         // also dynamic cast can never fail assumin shared_from_this() doesnt
-        gsys_view->removeObj(dynamic_pointer_cast<GraphicObject>(shared_from_this()));
+        gsys_view->unregisterObj(dynamic_pointer_cast<GraphicObject>(shared_from_this()));
         this->height = height;
-        gsys_view->addObj(dynamic_pointer_cast<GraphicObject>(shared_from_this()));
+        gsys_view->registerObj(dynamic_pointer_cast<GraphicObject>(shared_from_this()));
     }
 }
 
@@ -182,17 +182,6 @@ void GraphicObject::setDrawColor(SDL_Renderer *render, Color c)
     default:
         SDL_SetRenderDrawColor(render, RGB_MAGENTA, 255);
     }
-}
-
-/**
- * @brief Placeholder draw function
- *
- */
-void GraphicObject::draw()
-{
-    setDrawColor(render_view, color);
-    SDL_Rect r = {(int)position().x, (int)position().y, (int)size().x, (int)size().y};
-    SDL_RenderFillRect(render_view, &r);
 }
 
 /**
@@ -290,10 +279,13 @@ void Sprite::scaleY(int y)
  */
 void Sprite::draw()
 {
-    SDL_Rect dest = {(int)position().x, (int)position().y, (int)size().x, (int)size().y};
+    auto pos = gsys_view->cameraTransform({(int)position().x, (int)position().y});
+    SDL_Rect dest = {
+        pos.x, pos.y,
+        (int)(size().x * gsys_view->camera_zoom), (int)(size().y * gsys_view->camera_zoom)};
     if (SDL_RenderCopyEx(render_view, texture->getTexture(), &src_region, &dest, 0, NULL, SDL_FLIP_NONE))
         // TODO: copy ex supports hardware acceld rotation in the last 3 params
-        // which we currently do not support
+        // which wwe currently do not support
         std::cout << SDL_GetError() << '\n';
 }
 

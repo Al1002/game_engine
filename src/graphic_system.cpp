@@ -15,14 +15,14 @@ shared_ptr<Texture> GraphicSystem::loadTexture(string filepath)
     return texture;
 }
 
-void GraphicSystem::addObj(shared_ptr<GraphicObject> obj)
+void GraphicSystem::registerObj(shared_ptr<GraphicObject> obj)
 {
     obj->render_view = render;
     obj->gsys_view = this;
     bucket.emplace(obj->height, obj);
 }
 
-void GraphicSystem::removeObj(shared_ptr<GraphicObject> obj)
+void GraphicSystem::unregisterObj(shared_ptr<GraphicObject> obj)
 {
     auto &buckobj = *bucket.begin();
     

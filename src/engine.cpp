@@ -77,7 +77,12 @@ void Engine::registerObj(shared_ptr<Object> obj)
     shared_ptr<GraphicObject> graphic = dynamic_pointer_cast<GraphicObject>(obj);
     if (graphic)
     {
-        gsys->addObj(graphic);
+        gsys->registerObj(graphic);
+    }
+    shared_ptr<HandlerI> handle = dynamic_pointer_cast<HandlerI>(obj);
+    if (handle)
+    {
+        disp->addEventHandler(handle);
     }
     for (auto &child : obj->children)
     {
@@ -94,7 +99,7 @@ void Engine::unregisterObj(shared_ptr<Object> obj)
     shared_ptr<GraphicObject> graphic = dynamic_pointer_cast<GraphicObject>(obj);
     if (graphic)
     {
-        gsys->removeObj(graphic);
+        gsys->unregisterObj(graphic);
     }
     bucket.erase(obj);
 }
