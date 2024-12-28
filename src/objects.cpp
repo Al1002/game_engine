@@ -8,8 +8,11 @@
  * @copyright Copyright (c) 2024
  *
  */
-#include <engine.hpp>
+
 #include <objects.hpp>
+
+#include <engine.hpp>
+#include <graphic_system.hpp>
 
 void Object::init()
 {
@@ -81,7 +84,7 @@ void Object::attachLoopBehaviour(function<void(Object *, double)> behavior)
     this->loop_behavior = behavior;
 }
 
-const Vect2f Object2D::position() 
+const Vect2f Object2D::position()
 {
     auto parent = dynamic_pointer_cast<Object2D>(parent_view.lock());
     if (parent.get() == nullptr)
@@ -90,7 +93,7 @@ const Vect2f Object2D::position()
         return parent->position() + offset;
 }
 
-const Vect2f Object2D::size() 
+const Vect2f Object2D::size()
 {
     auto parent = dynamic_pointer_cast<Object2D>(parent_view.lock());
     if (parent.get() == nullptr)

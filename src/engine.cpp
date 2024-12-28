@@ -11,6 +11,12 @@
 
 #include <engine.hpp>
 
+class KeyboardEvent;
+#include <graphic_system.hpp>
+#include <dispatcher.hpp>
+#include <objects.hpp>
+#include <events.hpp>
+
 shared_ptr<Event> HardwareEventBuilder::build(SDL_Event e)
 {
     if (e.type == SDL_KEYDOWN)
@@ -31,7 +37,7 @@ Engine::Engine(Vect2i window_size)
 void Engine::start()
 {
     if (!run.try_lock())
-        throw std::runtime_error("Engine already running!"); 
+        throw std::runtime_error("Engine already running!");
     stop = false;
     tick_delay = 1.0 / 60;
     // tick_delay = 0; // test at max run speed

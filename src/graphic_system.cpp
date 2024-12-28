@@ -1,6 +1,8 @@
 #include <graphic_system.hpp>
+#include <colors.h>
+#include <objects.hpp>
 
-class GraphicObject; 
+class GraphicObject;
 
 GraphicSystem::GraphicSystem(Vect2i window_size)
 {
@@ -25,7 +27,7 @@ void GraphicSystem::registerObj(shared_ptr<GraphicObject> obj)
 void GraphicSystem::unregisterObj(shared_ptr<GraphicObject> obj)
 {
     auto &buckobj = *bucket.begin();
-    
+
     bucket.erase({obj->height, obj});
 }
 
@@ -36,10 +38,8 @@ void GraphicSystem::update()
     for (auto iter = bucket.begin(); iter != bucket.end(); iter++)
     {
         GraphicObject &obj = *iter->second.get();
-        //workers->enqueue(std::bind(&GraphicObject::draw, iter->second.get()));
+        // workers->enqueue(std::bind(&GraphicObject::draw, iter->second.get()));
         obj.draw();
     }
     SDL_RenderPresent(render);
 }
-
-

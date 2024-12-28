@@ -4,9 +4,9 @@
  * @brief Header for system specific includes, aliases, funcs, etc.
  * @version 0.1
  * @date 2024-12-18
- * 
+ *
  * @copyright Copyright (c) 2024
- * 
+ *
  */
 
 #include <iostream>
@@ -24,14 +24,16 @@
 
 /**
  * @brief Get the dir of the current binary
- * 
- * @return std::string 
+ *
+ * @return std::string
  */
-std::string getBinaryDir() {
+std::string getBinaryDir()
+{
     char path[1024];
 
 #ifdef _WIN32
-    if (GetModuleFileNameA(NULL, path, sizeof(path)) == 0) {
+    if (GetModuleFileNameA(NULL, path, sizeof(path)) == 0)
+    {
         std::cerr << "Error: Unable to get executable path!" << std::endl;
         return "";
     }
@@ -40,7 +42,8 @@ std::string getBinaryDir() {
 
 #else
     size_t len = readlink("/proc/self/exe", path, sizeof(path) - 1);
-    if (len == -1) {
+    if (len == -1)
+    {
         std::cerr << "Error: Unable to get executable path!" << std::endl;
         return "";
     }
@@ -50,4 +53,3 @@ std::string getBinaryDir() {
 #endif
     return dir;
 }
-

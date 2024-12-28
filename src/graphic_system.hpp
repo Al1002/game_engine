@@ -1,31 +1,23 @@
 #pragma once
 
-#include <memory> // smart pointers
-
-#include <string>
-#include <set>
-#include <utility>
+#include <std_includes.hpp>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_main.h> //
 #include <SDL2/SDL_image.h>
 
-#include <objects.hpp>
+#include <vects.hpp>
 
-using std::pair;
-using std::set;
-using std::string;
-
-using std::shared_ptr;
+class GraphicSystem;
 
 class GraphicObject;
-
 class Texture;
 
 class GraphicSystem
 {
     SDL_Renderer *render;
     SDL_Window *window;
+
 public:
     Vect2i camera_pos;
     float camera_zoom = 1;
@@ -45,9 +37,9 @@ public:
 
     /**
      * @brief Transform position in world space to camera space
-     * 
-     * @param pos 
-     * @return Vect2i 
+     *
+     * @param pos
+     * @return Vect2i
      */
     Vect2i cameraTransform(Vect2i pos)
     {

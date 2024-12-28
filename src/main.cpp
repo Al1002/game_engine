@@ -16,12 +16,7 @@
     Objects with need for performance may break any rules as nescessary.
 */
 
-#include <iostream>      // cout
-#include <memory>        // smart pointers
-#include <list>          // s.e.
-#include <unordered_set> // hash table
-#include <map>
-#include <random>
+#include <std_includes.hpp>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_main.h> //
@@ -37,26 +32,8 @@
 #include <objects.hpp>
 #include <events.hpp>
 #include <engine.hpp>
-#include <audio_system.hpp>
+#include <graphic_system.hpp>
 
-// general ADTs
-using std::list;
-using std::map;
-using std::mutex;
-using std::queue;
-using std::unordered_map;
-using std::unordered_multimap;
-using std::unordered_set;
-using std::vector;
-
-// smart pointer relevant
-using std::shared_ptr;
-using std::weak_ptr;
-using std::static_pointer_cast;
-using std::dynamic_pointer_cast; 
-using std::make_shared;
-using std::make_unique;
-using std::move;
 
 class Button
 {

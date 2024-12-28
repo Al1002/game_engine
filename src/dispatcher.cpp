@@ -1,14 +1,16 @@
 /**
  * @file dispatcher.cpp
  * @author Alex (aleksandriliev05@gmail.com)
- * @brief 
+ * @brief
  * @version 0.1
  * @date 2024-12-18
- * 
+ *
  * @copyright Copyright (c) 2024
- * 
+ *
  */
 #include <dispatcher.hpp>
+
+#include <events.hpp>
 
 EventDispatcher::EventDispatcher()
 {
