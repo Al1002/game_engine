@@ -62,6 +62,9 @@ void Engine::start()
         auto delta = clock.delta_time(tick_delay);
         std::cout << string() + "Delta: (" + std::to_string(delta) + ")" << '\n';
         std::cout << "Tick start\n";
+        for (const auto& obj : dead_bucket)
+            bucket.erase(obj);
+        dead_bucket.clear(); 
         this->update(delta);
         disp->dispatch();
         gsys->update();
@@ -90,9 +93,9 @@ void Engine::registerObj(shared_ptr<Object> obj)
     {
         disp->addEventHandler(handle);
     }
-    for (auto &child : obj->children)
+    for (auto &iter : obj->children)
     {
-        registerObj(child);
+        registerObj(iter);
     }
 }
 
@@ -100,14 +103,15 @@ void Engine::unregisterObj(shared_ptr<Object> obj)
 {
     for (auto iter = obj->children.begin(); iter != obj->children.end(); iter++)
     {
-        registerObj(*iter);
+        unregisterObj(*iter);
     }
     shared_ptr<GraphicObject> graphic = dynamic_pointer_cast<GraphicObject>(obj);
     if (graphic)
     {
         gsys->unregisterObj(graphic);
     }
-    bucket.erase(obj);
+    obj->engine_view.reset();
+    dead_bucket.emplace(obj);
 }
 
 void Engine::update(double delta)

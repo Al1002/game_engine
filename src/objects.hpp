@@ -35,27 +35,42 @@ class EngineController;
 class GraphicSystem;
 class Engine;
 
+/**
+ * @brief Base class for all game objects. 
+ */
 class Object : public std::enable_shared_from_this<Object>
 {
     friend Engine;
 
 protected:
     weak_ptr<Object> parent_view;
-    list<shared_ptr<Object>> children;
+    map<string, shared_ptr<Object>> children_map; ///< allows named access to children
+    list<shared_ptr<Object>> children; ///< allows indexed access to children
+    string name;
     function<void(Object *)> init_behavior;
     function<void(Object *, double)> loop_behavior;
-
 public:
     weak_ptr<Engine> engine_view;
-
-    inline shared_ptr<Engine> getEngine()
-    {
-        return engine_view.lock();
-    }
 
     virtual void init();
 
     virtual void loop(double delta);
+
+    shared_ptr<Engine> getEngine();
+
+    /**
+     * @brief Get the object's parent. If orphan, returns an empty shared_ptr.
+     * @return shared_ptr<Object> the object's parent
+     */
+    shared_ptr<Object> getParent();
+
+    /**
+     * @brief The name the node is given by the parrent. May be appended by an index if another child already has that name.
+     * @return string 
+     */
+    virtual string desiredName();
+
+    string getName();
 
     /**
      * @brief Add child to the object. Child is appended to the back of the child list.
@@ -63,18 +78,6 @@ public:
      * @param child child object
      */
     void addChild(shared_ptr<Object> child);
-
-    /**
-     * @brief Add child to the object. Child is appended to the back of the child list. Accepts any object.
-     *
-     * @tparam T child type
-     * @param child child object
-     */
-    template <typename T>
-    inline void addChild(shared_ptr<T> child)
-    {
-        addChild(static_pointer_cast<Object>(child));
-    }
 
     /**
      * @brief Short alias for addChild.
@@ -96,18 +99,6 @@ public:
     shared_ptr<Object> getChild(int index);
 
     /**
-     * @brief Short alias for getChild().
-     *
-     * @param index position of the child in the child list
-     * @return shared_ptr<Object>
-     * @throws out_of_range exception if the child index is out of range
-     */
-    inline shared_ptr<Object> get(int index)
-    {
-        return getChild(index);
-    }
-
-    /**
      * @brief Get child by index, downcast to the template type.
      *
      * @param index position of the child in the child list
@@ -127,70 +118,86 @@ public:
 
     /**
      * @brief Short alias for getChild.
-     *
      * @param index position of the child in the child list
      * @tparam T the type to downcast the child to
      * @return shared_ptr<Object>
      * @throws std::out_of_range exception if the child index is out of range
      * @throws  exception if the type is not an ancestor of the child's actual type
      */
-    template <typename T>
+    template <typename T = Object>
     inline shared_ptr<T> get(int index)
     {
         return getChild<T>(index);
     }
-
-    shared_ptr<Object> getChild(std::vector<int> indices);
-
-    /**
-     * @brief Short alias for getChild
-     *
-     * @param indices
-     * @return shared_ptr<Object>
-     */
-    inline shared_ptr<Object> get(std::vector<int> indices)
-    {
-        return getChild(indices);
-    }
+#if 0
+    shared_ptr<Object> getChild(vector<int> indices);
 
     template <typename T>
-    inline shared_ptr<T> getChild(std::vector<int> indices)
+    inline shared_ptr<T> getChild(vector<int> indices)
     {
         return dynamic_pointer_cast<T>(getChild(indices));
     }
 
     /**
      * @brief Short alias of getChild
-     *
      * @tparam T
      * @param indices
      * @return shared_ptr<T>
      */
-    template <typename T>
-    inline shared_ptr<T> get(std::vector<int> indices)
+    template <typename T = Object>
+    inline shared_ptr<T> get(vector<int> indices)
     {
         return getChild<T>(indices);
+    }
+#endif
+    /**
+     * @brief Get child by name.
+     * @param path 
+     * @return shared_ptr<Object>
+     * @throws std::out_of_range 
+     */
+    shared_ptr<Object> getChild(string path);
+
+    /**
+     * @brief Get child by name.
+     * @param path 
+     * @return shared_ptr<Object>
+     * @throws std::out_of_range 
+     */
+    template <typename T>
+    inline shared_ptr<T> getChild(string path)
+    {
+        return dynamic_pointer_cast<T>(getChild(path));
+    }
+
+    /**
+     * @brief Short alias of getChild
+     * @tparam T
+     * @param indices
+     * @return shared_ptr<T>
+     */
+    template <typename T = Object>
+    inline shared_ptr<T> get(string path)
+    {
+        return getChild<T>(path);
     }
 
     /**
      * @brief Remove child by index.
-     *
      * @param index position of the child in the child list
      * @return shared_ptr<Object> the removed child
-     * @throws out_of_range exception if the child index is out of range
+     * @throws std::out_of_range exception if the child index is out of range
      */
-    shared_ptr<Object> removeChild(int index)
-    {
-        if (children.size() <= index)
-            throw std::out_of_range("Index out of range");
-        auto iter = children.begin();
-        std::advance(iter, index);
-        (*iter)->parent_view.reset();
-        (*iter)->engine_view.reset();
-        children.remove(*iter);
-        return *iter;
-    }
-    // TODO FIXME       ^^^
+    shared_ptr<Object> removeChild(int index);
+
+    /**
+     * @brief Remove child by name.
+     * @param name name of the child to be removed
+     * @return shared_ptr<Object> the removed child
+     * @throws std::out_of_range exception if no child has that name
+     */
+    shared_ptr<Object> removeChild(string name);
+    
     /**
      * @brief A callable which is called in the object's loop
      *
@@ -208,6 +215,9 @@ public:
     // avoid attachEventHandler(shared_ptr);
 };
 
+/**
+ * @brief Base class for objects supporting 2D position. Position is relative to its parent.
+ */
 class Object2D : public Object
 {
 public:
@@ -223,19 +233,22 @@ public:
 
     /**
      * @brief Construct a new Object2D
-     *
      */
     Object2D();
 
+    virtual string desiredName() override;
+
     /**
      * @brief Construct a new Object2D
-     *
      * @param offset
      * @param base_size
      */
     Object2D(Vect2f offset, Vect2f base_size);
 };
 
+/**
+ * @brief Base class for all objects drawn on screen.
+ */
 class GraphicObject : public Object2D
 {
     friend GraphicSystem;
@@ -266,6 +279,8 @@ public:
      */
     GraphicObject(Vect2f offset, Vect2f base_size);
 
+    virtual string desiredName() override;
+
     /**
      * @brief Set the draw Height of the object. When objects are occupying the same space,
      * the object with the largest height will be drawn above the rest.
@@ -289,9 +304,11 @@ class Texture : public Object
     map<string, Sprite> sprites;
 
 public:
+
+    virtual string desiredName() override;
+
     /**
      * @brief Set the internal SDL_Texture
-     *
      * @param render SDL_Renderer
      * @param filepath File from which to load the image. Relative path is relative to executable location.
      */
@@ -299,7 +316,6 @@ public:
 
     /**
      * @brief Get the internal SDL_Texture, do not use unless you know what you're doing
-     *
      * @return SDL_Texture* pointer to the internal SDL_Texture, guaranteed to be valid for the lifetime of the `Texture` object
      */
     SDL_Texture *getTexture();
@@ -325,6 +341,9 @@ public:
     ~Texture();
 };
 
+/**
+ * @brief A sprite on the screen. 
+ */
 class Sprite : public GraphicObject
 {
     shared_ptr<Texture> texture; ///< Texture for the sprite to use
@@ -332,19 +351,19 @@ class Sprite : public GraphicObject
 public:
     /**
      * @brief Construct a new Sprite object
-     *
      */
     Sprite();
 
     /**
      * @brief Construct a new Sprite object
-     *
      * @param texture the texture to be used by the sprite
      * @param src_region the region from the texture to be used by the sprite
      * @param offset offset of the sprite
      * @param size size of the sprite
      */
     Sprite(shared_ptr<Texture> texture, Vect4i src_region, Vect2f offset, Vect2f size);
+
+    virtual string desiredName() override;
 
     /**
      * @brief Scale size to have a width of 'x'
@@ -358,7 +377,6 @@ public:
 
     /**
      * @brief Draw the sprite
-     *
      */
     void draw() override;
 };
@@ -369,7 +387,7 @@ public:
 class AudioPlayer : public Object
 {
     Mix_Chunk *sound;
-
+    int volume;
 public:
     bool loop = false;
     AudioPlayer(string file)
@@ -378,6 +396,8 @@ public:
         if (!sound)
             throw std::runtime_error(string() + "Failed to load WAV file: " + Mix_GetError());
     }
+
+    virtual string desiredName() override;
 
     int play()
     {
@@ -390,6 +410,21 @@ public:
             return 1;
         }
         return 0;
+    }
+
+    /**
+     * @brief Set the sound volume in range between 0 and 128, 0 being mute and 128 being max volume.
+     * 
+     * @param volume number between 0 and 128
+     */
+    void setVolume(int volume)
+    {
+        if(volume > 128)
+            volume = 128;
+        if(volume < 0)
+            volume = 0;
+        
+        Mix_VolumeChunk(sound, volume);
     }
 
     ~AudioPlayer()

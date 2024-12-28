@@ -6,6 +6,8 @@ class GraphicObject;
 
 GraphicSystem::GraphicSystem(Vect2i window_size)
 {
+    camera_pos = window_size / 2;
+    this->window_size = window_size;
     window = SDL_CreateWindow("Window Name", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_size.x, window_size.y, SDL_WINDOW_SHOWN);
     render = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 }
@@ -27,7 +29,6 @@ void GraphicSystem::registerObj(shared_ptr<GraphicObject> obj)
 void GraphicSystem::unregisterObj(shared_ptr<GraphicObject> obj)
 {
     auto &buckobj = *bucket.begin();
-
     bucket.erase({obj->height, obj});
 }
 

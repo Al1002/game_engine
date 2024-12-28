@@ -17,7 +17,7 @@ class GraphicSystem
 {
     SDL_Renderer *render;
     SDL_Window *window;
-
+    Vect2i window_size;
 public:
     Vect2i camera_pos;
     float camera_zoom = 1;
@@ -36,14 +36,13 @@ public:
     void unregisterObj(shared_ptr<GraphicObject> obj);
 
     /**
-     * @brief Transform position in world space to camera space
-     *
+     * @brief Transform position in world space to screen space
      * @param pos
      * @return Vect2i
      */
-    Vect2i cameraTransform(Vect2i pos)
+    Vect2i screenTransform(Vect2i pos)
     {
-        return Vect2i((pos.x - camera_pos.x) * camera_zoom, (pos.y - camera_pos.y) * camera_zoom);
+        return Vect2i((pos.x - camera_pos.x + window_size.x / 2) * camera_zoom, (pos.y - camera_pos.y + window_size.y / 2) * camera_zoom);
     }
 
     void update();

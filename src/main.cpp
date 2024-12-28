@@ -4,17 +4,8 @@
  * @brief
  * @version 0.1
  * @date 2024-11-27
- *
  * @copyright Copyright (c) 2024
- *
  */
-
-/*
-    Preamble
-    Death to premature optimization. Write code for function, not speed nor scalability.
-    Objects with user access may not use raw pointers.
-    Objects with need for performance may break any rules as nescessary.
-*/
 
 #include <std_includes.hpp>
 
@@ -118,18 +109,18 @@ public:
         time.start_timer();
 
         add(make_shared<Object2D>());
-        get(0)->add(getEngine()->get<Texture>(0)->buildSprite("green_pipe_bellow"));
-        get<Sprite>({0,0})->scaleX(100);
-        get<Sprite>({0,0})->offset = {-50, 75};
-        get(0)->add(getEngine()->get<Texture>(0)->buildSprite("green_pipe_above"));
-        get<Sprite>({0,1})->scaleX(100);
-        get<Sprite>({0,1})->offset = {-50, -75 - get<Sprite>({0,1})->size().y};
+        get(0)->add(getEngine()->get<Texture>("Texture")->buildSprite("green_pipe_bellow"));
+        get<Sprite>("Object2D/Sprite")->scaleX(100);
+        get<Sprite>("Object2D/Sprite")->offset = {-50, 75};
+        get(0)->add(getEngine()->get<Texture>("Texture")->buildSprite("green_pipe_above"));
+        get<Sprite>("Object2D/Sprite_1")->scaleX(100);
+        get<Sprite>("Object2D/Sprite_1")->offset = {-50, -75 - get<Sprite>("Object2D/Sprite_1")->size().y};
         get<Object2D>(0)->offset = {500, 200 + (float)(rand() % 200)};
         get(0)->attachLoopBehaviour([](Object *self, double delta){
             shared_ptr<Object2D> t_self = static_pointer_cast<GravityObject>(self->shared_from_this());
             t_self->offset.x -= 100 * delta;
             if(t_self->offset.x < -100)
-                ; // remove self from scene
+                t_self->getParent()->removeChild(t_self->getName());
         });
         getEngine()->add(removeChild(0));
     }
@@ -142,36 +133,36 @@ int main()
     // TODO: deepcpy for object cloning, analog to packed scenes in godot
     
     auto e = make_shared<Engine>(Vect2i(400, 720));
-    //e->gsys->camera_zoom = 0.5;
-    //e->gsys->camera_pos = {-200, -360};
-    
+    e->add(make_shared<Object>());
+    e->removeChild(0);
 
     // sprites, sizes gotten with brute force guessing
     e->add(e->gsys->loadTexture("./resources/flappy_sprite_sheet.png"));
-    e->get<Texture>(0)->defineSprite({148 * 0, 0, 144, 256}, "background");
-    e->get<Texture>(0)->defineSprite({148 * 2, 0, 160, 56}, "floor");
-    e->get<Texture>(0)->defineSprite({0, 512 - 28, 28, 28}, "bird");
-    e->get<Texture>(0)->defineSprite({28 * 2, 512 - 190, 28 * 1, 162}, "green_pipe_above");
-    e->get<Texture>(0)->defineSprite({28 * 3, 512 - 190, 28 * 1, 162}, "green_pipe_bellow");
+    e->get<Texture>("Texture")->defineSprite({148 * 0, 0, 144, 256}, "background");
+    e->get<Texture>("Texture")->defineSprite({148 * 2, 0, 160, 56}, "floor");
+    e->get<Texture>("Texture")->defineSprite({0, 512 - 28, 28, 28}, "bird");
+    e->get<Texture>("Texture")->defineSprite({28 * 2, 512 - 190, 28 * 1, 162}, "green_pipe_above");
+    e->get<Texture>("Texture")->defineSprite({28 * 3, 512 - 190, 28 * 1, 162}, "green_pipe_bellow");
     
     // backround
-    e->add(e->get<Texture>(0)->buildSprite("background"));
-    e->get<Sprite>(1)->scaleY(720);
-    e->get<Sprite>(1)->setDrawHeight(-2);
-    e->add(e->get<Texture>(0)->buildSprite("floor"));
-    e->get<Sprite>(2)->scaleX(420);
-    e->get<Sprite>(2)->offset = {0, 580};
-    e->get<Sprite>(2)->setDrawHeight(1);
+    e->add(e->get<Texture>("Texture")->buildSprite("background"));
+    e->get<Sprite>("Sprite")->scaleY(720);
+    e->get<Sprite>("Sprite")->setDrawHeight(-2);
+    e->add(e->get<Texture>("Texture")->buildSprite("floor"));
+    e->get<Sprite>("Sprite_1")->scaleX(420);
+    e->get<Sprite>("Sprite_1")->offset = {0, 580};
+    e->get<Sprite>("Sprite_1")->setDrawHeight(1);
 
     // bird
     auto object = make_shared<GravityObject>();
     object->attachInitBehaviour([](Object *self){
         static_cast<GravityObject*>(self)->offset = {100, 300};
-        auto sprite = self->getEngine()->get<Texture>(0)->buildSprite("bird");
+        auto sprite = self->getEngine()->get<Texture>("Texture")->buildSprite("bird");
         sprite->scaleX(84);
         sprite->setDrawHeight(2);
         self->add(sprite);
         self->add(make_shared<AudioPlayer>("resources/sfx_jump.mp3"));
+        self->get<AudioPlayer>(1)->setVolume(25);
         self->add(make_shared<BirdHandler>());
     });
 

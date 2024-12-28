@@ -37,10 +37,11 @@ public:
 
     /**
      * @brief Add new `Handler` to be notified of `Event`s. Will only be notified of events of its own type.
-     *
      * @param handle
      */
     void addEventHandler(shared_ptr<HandlerI> handle);
+
+    void removeEventHandler(shared_ptr<HandlerI> handle){};
 
     /**
      * @brief Add `Event` to be sent to `Handler`s. Handlers will only recieve events when `dispatch()` is called.

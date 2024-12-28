@@ -31,6 +31,7 @@ using std::move;
 // general ADTs
 using std::string;
 using std::list;
+using std::vector;
 using std::queue;
 using std::map;
 using std::set;
@@ -39,18 +40,3 @@ using std::unordered_set;
 using std::function;
 using std::pair;
 using std::mutex;
-/* 
-using std::unordered_map;
-using std::unordered_multimap;
-using std::vector;
-
-using std::list;
-using std::mutex;
-using std::queue;
-using std::unordered_map;
-using std::unordered_multimap;
-using std::unordered_set;
-using std::mutex;
-using std::queue;
-using std::unordered_set;
-*/

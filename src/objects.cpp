@@ -4,9 +4,7 @@
  * @brief
  * @version 0.1
  * @date 2024-12-18
- *
  * @copyright Copyright (c) 2024
- *
  */
 
 #include <objects.hpp>
@@ -26,11 +24,43 @@ void Object::loop(double delta)
         loop_behavior(this, delta);
 }
 
+shared_ptr<Engine> Object::getEngine()
+{
+    return engine_view.lock();
+}
+
+shared_ptr<Object> Object::getParent()
+{
+    return parent_view.lock();
+}
+
+string Object::desiredName()
+{
+    return "Object";
+}
+
+string Object::getName()
+{
+    return name;
+}
+
 void Object::addChild(shared_ptr<Object> child)
 {
     if (std::find(children.begin(), children.end(), child) != children.end())
-        return;
+        return; // child already exists
+    // give child name and insert
+    string name = child->desiredName();
+    string unique_name = name;
+    map<string, shared_ptr<Object>>::iterator result;
+    for(int i = 1; children_map.find(unique_name) != children_map.end(); i++)
+    {
+        // if the name is already unique, we dont enter this loop and it remains as it was originally
+        unique_name = name + "_" + std::to_string(i);
+    }
+    children_map.emplace(unique_name, child);
     children.push_back(child);
+    // insert end
+    child->name = unique_name;
     child->parent_view = weak_ptr<Object>(shared_from_this());
     auto engine = getEngine();
     if (engine != nullptr)
@@ -45,8 +75,8 @@ shared_ptr<Object> Object::getChild(int index)
     std::advance(iter, index);
     return *iter;
 }
-
-shared_ptr<Object> Object::getChild(std::vector<int> indices)
+#if 0
+shared_ptr<Object> Object::getChild(vector<int> indices)
 {
     if (indices.empty())
         throw std::invalid_argument("Indices list is empty");
@@ -62,6 +92,47 @@ shared_ptr<Object> Object::getChild(std::vector<int> indices)
 
     std::vector<int> remainder(indices.begin() + 1, indices.end());
     return (*iter)->getChild(remainder);
+}
+#endif
+shared_ptr<Object> Object::getChild(string path)
+{
+    int delim = path.find('/');
+    string current = path.substr(0, delim);
+    auto it = children_map.find(current);
+
+    if (it == children_map.end())
+        throw std::out_of_range("Child " + current + " not found");
+    
+    if (delim == string::npos)
+        return it->second;
+    
+    return it->second->getChild(path.substr(delim + 1));
+}
+
+shared_ptr<Object> Object::removeChild(int index)
+    {
+        if (children.size() <= index)
+            throw std::out_of_range("Index out of range");
+        auto iter = children.begin();
+        std::advance(iter, index);
+        shared_ptr<Object> child = *iter;
+        children.erase(iter);
+        children_map.erase(child->name);
+        child->parent_view.reset();
+        child->engine_view.reset();
+        child->name = "";
+        return child;
+    }
+
+shared_ptr<Object> Object::removeChild(string name)
+{
+    shared_ptr<Object> child = children_map.at(name);
+    children.erase(std::find(children.begin(), children.end(), child));
+    children_map.erase(name);
+    child->parent_view.reset();
+    child->getEngine()->unregisterObj(child);
+    child->name = "";
+    return child;
 }
 
 /**
@@ -110,6 +181,11 @@ Object2D::Object2D()
 {
 }
 
+string Object2D::desiredName()
+{
+    return "Object2D";
+}
+
 /**
  * @brief Construct a new Object2D
  *
@@ -129,6 +205,11 @@ Object2D::Object2D(Vect2f offset, Vect2f base_size)
  */
 GraphicObject::GraphicObject()
 {
+}
+
+string GraphicObject::desiredName()
+{
+    return "GraphicObject";
 }
 
 /**
@@ -185,6 +266,11 @@ void GraphicObject::setDrawColor(SDL_Renderer *render, Color c)
     default:
         SDL_SetRenderDrawColor(render, RGB_MAGENTA, 255);
     }
+}
+
+string Texture::desiredName()
+{
+    return "Texture";
 }
 
 /**
@@ -260,6 +346,11 @@ Sprite::Sprite(shared_ptr<Texture> texture, Vect4i src_region, Vect2f offset, Ve
     this->src_region = {src_region.x(), src_region.y(), src_region.z(), src_region.w()};
 }
 
+string Sprite::desiredName()
+{
+    return "Sprite";
+}
+
 /**
  * @brief Scale size to have a width of 'x'
  */
@@ -282,7 +373,7 @@ void Sprite::scaleY(int y)
  */
 void Sprite::draw()
 {
-    auto pos = gsys_view->cameraTransform({(int)position().x, (int)position().y});
+    auto pos = gsys_view->screenTransform({(int)position().x, (int)position().y});
     SDL_Rect dest = {
         pos.x, pos.y,
         (int)(size().x * gsys_view->camera_zoom), (int)(size().y * gsys_view->camera_zoom)};
@@ -290,6 +381,11 @@ void Sprite::draw()
         // TODO: copy ex supports hardware acceld rotation in the last 3 params
         // which wwe currently do not support
         std::cout << SDL_GetError() << '\n';
+}
+
+string AudioPlayer::desiredName()
+{
+    return "AudioPlayer";
 }
 
 void EngineController::init()

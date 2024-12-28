@@ -46,13 +46,13 @@ class Engine : public std::enable_shared_from_this<Engine>
 
     thread_pool::static_pool workers;
     unordered_set<shared_ptr<Object>> bucket;
+    unordered_set<shared_ptr<Object>> dead_bucket;
     shared_ptr<Object> root; ///< root object
     double tick_delay;       // minimum time between updates
     std::mutex run;          // signifies the thread running the engine
     Clock clock;
     std::atomic<bool> stop; // set to true to stop engine
     std::mutex operation;   // can either be held when runing an update or changing engine settings
-    Vect2i window_size;
 
 public:
     GraphicSystem *gsys;
@@ -105,10 +105,9 @@ public:
 
     // Composition with root object
     
-    template <typename T = Object>
-    inline void addChild(shared_ptr<T> child)
+    inline void addChild(shared_ptr<Object> child)
     {
-        root->addChild<T>(child);
+        root->addChild(child);
         registerObj(child);
     }
 
@@ -122,7 +121,6 @@ public:
         addChild(child);
     }
 
-
     template <typename T = Object>
     inline shared_ptr<T> getChild(int index)
     {
@@ -131,7 +129,6 @@ public:
 
     /**
      * @brief Short alias for getChild().
-     *
      * @param index position of the child in the child list
      * @return shared_ptr<Object>
      * @throws out_of_range exception if the child index is out of range
@@ -141,7 +138,7 @@ public:
     {
         return getChild<T>(index);
     }
-
+#if 0
     template <typename T = Object>
     inline shared_ptr<T> getChild(std::vector<int> indices)
     {
@@ -161,5 +158,39 @@ public:
     inline shared_ptr<T> get(std::vector<int> indices)
     {
         return getChild<T>(indices);
+    }
+#endif
+    template <typename T = Object2D>
+    inline shared_ptr<T> getChild(string path)
+    {
+        return root->getChild<T>(path);
+    }
+
+    template <typename T>
+    inline shared_ptr<T> get(string path)
+    {
+        return getChild<T>(path);
+    }
+
+    /**
+     * @brief Remove child by index.
+     * @param index position of the child in the child list
+     * @return shared_ptr<Object> the removed child
+     * @throws std::out_of_range exception if the child index is out of range
+     */
+    inline shared_ptr<Object> removeChild(int index)
+    {
+        return root->removeChild(index);
+    }
+
+    /**
+     * @brief Remove child by name.
+     * @param name name of the child to be removed
+     * @return shared_ptr<Object> the removed child
+     * @throws std::out_of_range exception if no child has that name
+     */
+    inline shared_ptr<Object> removeChild(string name)
+    {
+        return root->removeChild(name);
     }
 };
