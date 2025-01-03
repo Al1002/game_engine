@@ -16,7 +16,6 @@
 #include <SDL2/SDL_main.h> //
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_mixer.h>
-#include <thread_pools.hpp>
 
 #include <vects.hpp> // Mathematical vectors
 #include <clock.h>   // clock/timer utility
@@ -44,7 +43,7 @@ class Engine : public std::enable_shared_from_this<Engine>
 {
     friend EngineController;
 
-    thread_pool::static_pool workers;
+    //thread_pool::static_pool workers;
     unordered_set<shared_ptr<Object>> bucket;
     unordered_set<shared_ptr<Object>> dead_bucket;
     shared_ptr<Object> root; ///< root object

@@ -2,6 +2,7 @@
 html/
 latex/
 build/
+build_win/
 gmon.out
 analisys*
 callgrind*

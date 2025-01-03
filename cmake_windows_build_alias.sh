@@ -1,0 +1,1 @@
+cmake -S . -B build_win -DCMAKE_TOOLCHAIN_FILE=./cmake/windows_toolchain.cmake -DCMAKE_BUILD_TYPE=Release && cmake --build build_win

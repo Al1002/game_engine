@@ -14,8 +14,6 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_mixer.h>
 
-#include <thread_pools.hpp>
-
 #include <vects.hpp> // Mathematical vectors
 #include <clock.h>   // clock/timer utility
 
@@ -26,11 +24,10 @@
 #include <graphic_system.hpp>
 
 
-class Button
+class Button : public Object2D
 {
 
 };
-
 
 // 
 class Box : public Object2D
@@ -53,27 +50,6 @@ public:
         }
         offset = offset + accel * delta; // bad for small delta; typing is hard as pos migth require some FLOPS
         Object::loop(delta);
-    }
-};
-
-class FixedJumpHandler : public Handler<KeyboardEvent>
-{
-public:
-    shared_ptr<Object2D> that;
-    FixedJumpHandler(shared_ptr<Object2D> t)
-    {
-        that = t;
-    }
-    void handle(shared_ptr<KeyboardEvent> e) override
-    {
-        if (e->sdl_event.keysym.sym == 'a')
-            that->offset.x -= 100;
-        if (e->sdl_event.keysym.sym == 'd')
-            that->offset.x += 100;
-        if (e->sdl_event.keysym.sym == 'w')
-            that->offset.y -= 100;
-        if (e->sdl_event.keysym.sym == 's')
-            that->offset.y += 100;
     }
 };
 
@@ -126,8 +102,11 @@ public:
     }
 };
 
-
-int main()
+#ifdef __WIN32__
+int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+#else
+int main(int argc, char **argv)
+#endif
 {
     Engine::enable();
     // TODO: deepcpy for object cloning, analog to packed scenes in godot

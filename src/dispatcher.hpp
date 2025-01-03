@@ -4,9 +4,7 @@
  * @brief
  * @version 0.1
  * @date 2024-12-18
- *
  * @copyright Copyright (c) 2024
- *
  */
 #pragma once
 
@@ -45,14 +43,12 @@ public:
 
     /**
      * @brief Add `Event` to be sent to `Handler`s. Handlers will only recieve events when `dispatch()` is called.
-     *
      * @param e
      */
     void addEvent(shared_ptr<Event> e);
 
     /**
      * @brief Function to dispatch
-     *
      */
     void dispatch();
 };

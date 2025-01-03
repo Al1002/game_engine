@@ -15,7 +15,6 @@
 #include <SDL2/SDL_main.h> //
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_mixer.h>
-#include <thread_pools.hpp>
 
 #include <vects.hpp> // Mathematical vectors
 #include <clock.h>   // clock/timer utility

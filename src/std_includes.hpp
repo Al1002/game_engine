@@ -10,12 +10,15 @@
 #include <unordered_set> // hash table
 #include <utility>
 
-#include <mutex>
 #include <functional>
 #include <iostream> // cout
 #include <random>
-
-
+#if defined(__MINGW32__) || defined(__MINGW64__)
+#include "mingw-threads/mingw.mutex.h"
+#else
+#include <mutex>
+#include <atomic>
+#endif
 // smart pointer relevant
 using std::shared_ptr;
 using std::weak_ptr;

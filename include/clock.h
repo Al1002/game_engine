@@ -28,6 +28,9 @@
 
 #pragma once
 #include <time.h>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 /**
  * @brief A clock that can be used for measuring time and limiting loop speed.
@@ -38,9 +41,16 @@
  */
 class Clock
 {
-	const static long NANOS_PER_SEC = 1000000000;
-	const static long MICROS_PER_SEC = 1000000;
-	timespec past, present, stop; // past - when the timer was last started, present - static place to load current time, stop - when the timer was stopped
+	const static long NANOS_PER_SEC 	= 1000000000;
+	const static long MICROS_PER_SEC 	= 1000000;
+    const static long MILIS_PER_SEC		= 1000;
+	// past - when the timer was last started, present - static place to load current time, stop - when the timer was stopped
+#ifdef __linux__
+	timespec past, present, stop;
+#elif defined(_WIN32)
+	LARGE_INTEGER past, present, stop;
+    LARGE_INTEGER frequency;
+#endif
 	double delta;
 	bool stopped = false;
 
@@ -51,6 +61,7 @@ public:
 	 * 
 	 */
 	Clock();
+	
 	/**
 	 * @brief Starts the timer.
 	 *
@@ -97,11 +108,9 @@ public:
 	 * @return The time elapsed between function calls
 	 *
 	 * @note
-	 * Uses `usleep()` to block the thread while waiting.
 	 *
-	 * @param tick_durration The time to wait, in secconds
+	 * @param tick_durration The time to wait, in seconds
 	 */
 	double delta_time(double tick_durration = -1 );
-
 
 };
