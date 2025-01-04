@@ -1,8 +1,4 @@
-if(MINGW)
-add_library(clock STATIC "../include/clock_windows.cpp")
-else()
-add_library(clock STATIC "../include/clock.cpp")
-endif()
+find_package(clock)
 
 add_library(engine STATIC
     engine.cpp
@@ -24,9 +20,10 @@ target_link_libraries(engine PUBLIC
     SDL2_mixer
 )
 
-target_link_libraries(engine PRIVATE $<BUILD_INTERFACE:clock>)
+target_link_libraries(engine PRIVATE $<BUILD_INTERFACE:clock::clock>)
 
 add_executable(main main.cpp)
-target_include_directories(main PUBLIC "${CMAKE_CURRENT_LIST_DIR}")
+target_include_directories(main PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
 target_link_libraries(main PUBLIC engine)
+target_link_libraries(main PRIVATE $<BUILD_INTERFACE:clock::clock>)
