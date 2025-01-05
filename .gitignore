@@ -6,3 +6,5 @@ build_win/
 gmon.out
 analisys*
 callgrind*
+main
+main.exe

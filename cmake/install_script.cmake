@@ -3,9 +3,9 @@ install(TARGETS engine
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include)
+)
 
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/game_engine
     DESTINATION include/game_engine
     FILES_MATCHING PATTERN "*.h*"
 )

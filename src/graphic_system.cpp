@@ -28,6 +28,8 @@ void GraphicSystem::registerObj(shared_ptr<GraphicObject> obj)
 
 void GraphicSystem::unregisterObj(shared_ptr<GraphicObject> obj)
 {
+    obj->render_view = nullptr;
+    obj->gsys_view = nullptr;
     auto &buckobj = *bucket.begin();
     bucket.erase({obj->height, obj});
 }

@@ -8,16 +8,18 @@
  */
 #pragma once
 
-#include <std_includes.hpp>
+#include "std_includes.hpp"
 
-// Declared here
+// defined here
 class EventDispatcher;
 
-// Extern
+// extern
 class Event;
 class HandlerI;
 
-
+/**
+ * @brief Class which notifies registered handlers of events.
+ */
 class EventDispatcher
 {
     queue<shared_ptr<Event>> buffers[2]; ///< queues to implement double buffering
@@ -34,11 +36,15 @@ public:
     EventDispatcher();
 
     /**
-     * @brief Add new `Handler` to be notified of `Event`s. Will only be notified of events of its own type.
+     * @brief Add new `Handler` to be notified of `Event`s. Will only be notified of events of its `Event` type.
      * @param handle
      */
     void addEventHandler(shared_ptr<HandlerI> handle);
 
+    /**
+     * @brief Remove `Handler` from getting notified of `Event`s.
+     * @param handle
+     */
     void removeEventHandler(shared_ptr<HandlerI> handle){};
 
     /**

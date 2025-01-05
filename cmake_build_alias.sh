@@ -1,1 +1,1 @@
-cmake -S . -B build  --toolchain cmake/windows_toolchain.cmake -DCMAKE_BUILD_TYPE=Release && cmake --build build
+cmake -S . -B build  --toolchain cmake/linux_toolchain.cmake -DCMAKE_BUILD_TYPE=Release && cmake --build build

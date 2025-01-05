@@ -9,19 +9,18 @@
  */
 #pragma once
 
-#include <std_includes.hpp>
-
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_main.h> //
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_mixer.h>
 
-#include <vects.hpp> // Mathematical vectors
 #include <clock.h>   // clock/timer utility
 
-#include <colors.h> // #defined RGB_COLORs
+#include "std_includes.hpp"
+#include "colors.h" // #defined RGB_COLORs
+#include "vects.hpp" // Mathematical vectors
 
-// Defined here
+// eefined here
 class Object;
 class Object2D;
 class GraphicObject;
@@ -30,7 +29,7 @@ class Sprite;
 class AudioPlayer;
 class EngineController;
 
-// Extern
+// extern
 class GraphicSystem;
 class Engine;
 

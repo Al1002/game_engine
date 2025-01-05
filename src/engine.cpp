@@ -73,11 +73,6 @@ void Engine::start()
     run.unlock();
 }
 
-/**
- * @brief Add object to processing wake up list
- *
- * @param obj
- */
 void Engine::registerObj(shared_ptr<Object> obj)
 {
     obj->engine_view = weak_from_this();

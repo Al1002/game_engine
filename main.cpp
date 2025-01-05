@@ -13,7 +13,6 @@
 #include <SDL2/SDL_main.h> //
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_mixer.h>
-
 #include <vects.hpp> // Mathematical vectors
 #include <clock.h>   // clock/timer utility
 
@@ -23,13 +22,18 @@
 #include <engine.hpp>
 #include <graphic_system.hpp>
 
+class MouseEvent;
 
-class Button : public Object2D
+class Button : public Object2D, Handler<MouseEvent>
 {
+public:
+    virtual void handle(shared_ptr<MouseEvent> e)
+    {
 
+    }
 };
 
-// 
+
 class Box : public Object2D
 {
     
@@ -102,7 +106,8 @@ public:
     }
 };
 
-#ifdef __WIN32__
+
+#ifdef __WIN32__ // the mingw SDL expects WinMain
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 #else
 int main(int argc, char **argv)

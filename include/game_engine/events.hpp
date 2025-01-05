@@ -2,7 +2,7 @@
 
 #include <std_includes.hpp>
 
-// declared here
+// defined here
 class Event;
 class KeyboardEvent;
 class HandlerI;
@@ -12,7 +12,7 @@ template <typename EventType, typename ParentType>
 class ParentHandler;
 
 // extern
-#include <objects.hpp>
+#include "objects.hpp"
 
 /**
  * @brief Base object for all events

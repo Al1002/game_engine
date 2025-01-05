@@ -10,17 +10,17 @@
  */
 #pragma once
 
-#include <std_includes.hpp>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_main.h> //
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_mixer.h>
 
-#include <vects.hpp> // Mathematical vectors
 #include <clock.h>   // clock/timer utility
 
-#include <colors.h> // #defined RGB_COLORs
+#include "std_includes.hpp"
+#include "vects.hpp" // Mathematical vectors
+#include "colors.h" // #defined RGB_COLORs
 
 // defined here
 class Engine;
@@ -31,7 +31,7 @@ class Event;
 class EngineController;
 class GraphicSystem;
 class EventDispatcher;
-#include <objects.hpp>
+#include "objects.hpp"
 
 class HardwareEventBuilder
 {

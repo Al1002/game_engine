@@ -135,21 +135,11 @@ shared_ptr<Object> Object::removeChild(string name)
     return child;
 }
 
-/**
- * @brief A callable which is called in the object's loop
- *
- * @param behaviour
- */
 void Object::attachInitBehaviour(function<void(Object *)> behavior)
 {
     this->init_behavior = behavior;
 }
 
-/**
- * @brief A callable which is called in the object's init
- *
- * @param behaviour
- */
 void Object::attachLoopBehaviour(function<void(Object *, double)> behavior)
 {
     this->loop_behavior = behavior;
@@ -173,10 +163,6 @@ const Vect2f Object2D::size()
         return base_size * (scale * parent->scale);
 }
 
-/**
- * @brief Construct a new Object2D
- *
- */
 Object2D::Object2D()
 {
 }
@@ -186,12 +172,6 @@ string Object2D::desiredName()
     return "Object2D";
 }
 
-/**
- * @brief Construct a new Object2D
- *
- * @param offset
- * @param base_size
- */
 Object2D::Object2D(Vect2f offset, Vect2f base_size)
 {
     this->offset = offset;
@@ -199,10 +179,6 @@ Object2D::Object2D(Vect2f offset, Vect2f base_size)
     this->scale = 1;
 }
 
-/**
- * @brief Construct a new GraphicObject
- *
- */
 GraphicObject::GraphicObject()
 {
 }
@@ -212,23 +188,11 @@ string GraphicObject::desiredName()
     return "GraphicObject";
 }
 
-/**
- * @brief Construct a new GraphicObject
- *
- * @param offset
- * @param base_size
- */
 GraphicObject::GraphicObject(Vect2f offset, Vect2f base_size)
     : Object2D(offset, base_size)
 {
 }
 
-/**
- * @brief Set the draw Height of the object. When objects are occupying the same space,
- * the object with the largest height will be drawn above the rest.
- *
- * @param height
- */
 void GraphicObject::setDrawHeight(int height)
 {
     if (gsys_view == nullptr)
@@ -244,12 +208,6 @@ void GraphicObject::setDrawHeight(int height)
     }
 }
 
-/**
- * @brief Deprecated
- *
- * @param render
- * @param c
- */
 void GraphicObject::setDrawColor(SDL_Renderer *render, Color c)
 {
     switch (c)
@@ -273,12 +231,6 @@ string Texture::desiredName()
     return "Texture";
 }
 
-/**
- * @brief Set the internal SDL_Texture
- *
- * @param render SDL_Renderer
- * @param filepath File from which to load the image. Relative path is relative to executable location.
- */
 void Texture::setTexture(SDL_Renderer *render, string filepath)
 {
     texture = IMG_LoadTexture(render, filepath.c_str());
@@ -287,32 +239,17 @@ void Texture::setTexture(SDL_Renderer *render, string filepath)
     SDL_QueryTexture(texture, NULL, NULL, &size.x, &size.y);
 }
 
-/**
- * @brief Get the internal SDL_Texture, do not use unless you know what you're doing
- *
- * @return SDL_Texture* pointer to the internal SDL_Texture, guaranteed to be valid for the lifetime of the `Texture` object
- */
 SDL_Texture *Texture::getTexture()
 {
     return texture;
 }
 
-/**
- * @brief Adds a sprite definition to the atlas. This can be used to then produce that sprite.
- *
- */
 void Texture::defineSprite(Vect4i src_region, string name)
 {
     Sprite sprite(static_pointer_cast<Texture>(shared_from_this()), src_region, Vect2f(0, 0), Vect2f(src_region.z(), src_region.w()));
     sprites[name] = sprite;
 }
 
-/**
- * @brief Creates a sprite previously defined by `defineSprite`
- *
- * @param name the name given to the sprite in `defineSprite`
- * @return shared_ptr<Sprite>
- */
 shared_ptr<Sprite> Texture::buildSprite(string name)
 {
     // Sprite &sprite = sprites.at(name);
@@ -324,22 +261,10 @@ Texture::~Texture()
     SDL_DestroyTexture(texture);
 }
 
-/**
- * @brief Construct a new Sprite object
- *
- */
 Sprite::Sprite()
 {
 }
 
-/**
- * @brief Construct a new Sprite object
- *
- * @param texture the texture to be used by the sprite
- * @param src_region the region from the texture to be used by the sprite
- * @param offset offset of the sprite
- * @param size size of the sprite
- */
 Sprite::Sprite(shared_ptr<Texture> texture, Vect4i src_region, Vect2f offset, Vect2f size) : GraphicObject(offset, size)
 {
     this->texture = texture;
@@ -351,26 +276,16 @@ string Sprite::desiredName()
     return "Sprite";
 }
 
-/**
- * @brief Scale size to have a width of 'x'
- */
 void Sprite::scaleX(int x)
 {
     scale = x / base_size.x;
 }
 
-/**
- * @brief Scale size to have a height of 'y'
- */
 void Sprite::scaleY(int y)
 {
     scale = y / base_size.y;
 }
 
-/**
- * @brief Draw the sprite
- *
- */
 void Sprite::draw()
 {
     auto pos = gsys_view->screenTransform({(int)position().x, (int)position().y});

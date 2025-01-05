@@ -6,10 +6,12 @@
 #include <SDL2/SDL_main.h> //
 #include <SDL2/SDL_image.h>
 
-#include <vects.hpp>
+#include "vects.hpp"
 
+// defined here
 class GraphicSystem;
 
+// extern
 class GraphicObject;
 class Texture;
 

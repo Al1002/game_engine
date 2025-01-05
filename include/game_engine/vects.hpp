@@ -1,8 +1,8 @@
 #pragma once
-#include <hashtable.h>
+#include <functional>
 #include <type_traits>
 
-#include <tmp_extensions.hpp>
+#include "tmp_extensions.hpp"
 
 class Vect{
     /**
@@ -234,6 +234,7 @@ public:
         return true;
     }
 };
+
 namespace std {
     template <size_t Dim, typename Num>
     struct hash<NVect<Dim, Num>>
