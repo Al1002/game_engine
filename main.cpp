@@ -106,7 +106,6 @@ public:
     }
 };
 
-
 #ifdef __WIN32__ // the mingw SDL expects WinMain
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 #else
@@ -117,9 +116,7 @@ int main(int argc, char **argv)
     // TODO: deepcpy for object cloning, analog to packed scenes in godot
     
     auto e = make_shared<Engine>(Vect2i(400, 720));
-    e->add(make_shared<Object>());
-    e->removeChild(0);
-
+    
     // sprites, sizes gotten with brute force guessing
     e->add(e->gsys->loadTexture("./resources/flappy_sprite_sheet.png"));
     e->get<Texture>("Texture")->defineSprite({148 * 0, 0, 144, 256}, "background");

@@ -254,4 +254,3 @@ typedef NVect<4, int> Vect4i;
 typedef Vect2<float> Vect2f;
 typedef NVect<3, float> Vect3f;
 typedef NVect<4, float> Vect4f;
-

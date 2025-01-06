@@ -202,9 +202,10 @@ void GraphicObject::setDrawHeight(int height)
         // while not nescessary per se, we set the height only after the object is out of the set
         // we technically dont have ownership until the object is outside the queue
         // also dynamic cast can never fail assumin shared_from_this() doesnt
+        auto hold = gsys_view; // unregister deletes view
         gsys_view->unregisterObj(dynamic_pointer_cast<GraphicObject>(shared_from_this()));
         this->height = height;
-        gsys_view->registerObj(dynamic_pointer_cast<GraphicObject>(shared_from_this()));
+        hold->registerObj(dynamic_pointer_cast<GraphicObject>(shared_from_this()));
     }
 }
 
