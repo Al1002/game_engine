@@ -129,10 +129,19 @@ int main(int argc, char **argv)
     e->add(e->get<Texture>("Texture")->buildSprite("background"));
     e->get<Sprite>("Sprite")->scaleY(720);
     e->get<Sprite>("Sprite")->setDrawHeight(-2);
+    
+    // floor
     e->add(e->get<Texture>("Texture")->buildSprite("floor"));
-    e->get<Sprite>("Sprite_1")->scaleX(420);
+    e->get<Sprite>("Sprite_1")->scaleX(480);
     e->get<Sprite>("Sprite_1")->offset = {0, 580};
     e->get<Sprite>("Sprite_1")->setDrawHeight(1);
+    e->get<Sprite>("Sprite_1")->attachLoopBehaviour([](Object *self, double delta){
+        shared_ptr<Object2D> t_self = static_pointer_cast<GravityObject>(self->shared_from_this());
+        t_self->offset.x -= 100 * delta;
+        if(t_self->offset.x < -36)
+            t_self->offset.x = 0;
+    });
+    
 
     // bird
     auto object = make_shared<GravityObject>();
