@@ -1,4 +1,19 @@
-find_package(clock)
+find_package(clock REQUIRED)
+
+find_library(SDL2_LIBRARY
+    NAMES SDL2 SDL2-2.0
+    HINTS ${SDL2_DIR} /usr/local/lib /usr/lib
+)
+
+find_library(SDL2_IMAGE_LIBRARY
+    NAMES SDL2_image
+    HINTS /usr/lib /usr/local/lib
+)
+
+find_library(SDL2_MIXER_LIBRARY
+    NAMES SDL2_mixer
+    HINTS /usr/lib /usr/local/lib
+)
 
 add_library(engine STATIC
     engine.cpp

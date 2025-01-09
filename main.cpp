@@ -16,11 +16,14 @@
 #include <vects.hpp> // Mathematical vectors
 #include <clock.h>   // clock/timer utility
 
-#include <colors.h> // #defined RGB_COLORs
+#include <box2d/box2d.h> 
+
+#include <colors.h>  // #defined RGB_COLORs
 #include <objects.hpp>
 #include <events.hpp>
 #include <engine.hpp>
 #include <graphic_system.hpp>
+#include <physics.hpp>
 
 class MouseEvent;
 
@@ -34,7 +37,7 @@ public:
 };
 
 
-class Box : public Object2D
+class DynamicBody : public Object2D
 {
     
 };
@@ -106,6 +109,8 @@ public:
     }
 };
 
+#include <exception>
+
 #ifdef __WIN32__ // the mingw SDL expects WinMain
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 #else
@@ -114,11 +119,21 @@ int main(int argc, char **argv)
 {
     Engine::enable();
     // TODO: deepcpy for object cloning, analog to packed scenes in godot
-    
+    World boxworld = World({0, 0.1});
+    shared_ptr<PhysicsObject> box = make_shared<PhysicsObject>(boxworld.world, Vect2f(0,0), Vect2f(84,84), b2_dynamicBody);
+    boxworld.objects.emplace(box);
+    shared_ptr<PhysicsObject> floor = make_shared<PhysicsObject>(boxworld.world, Vect2f(0, 520), Vect2f(420,100), b2_staticBody);
+    boxworld.objects.emplace(floor);
+
+
     auto e = make_shared<Engine>(Vect2i(400, 720));
     
     // sprites, sizes gotten with brute force guessing
-    e->add(e->gsys->loadTexture("./resources/flappy_sprite_sheet.png"));
+    try{
+        e->add(e->gsys->loadTexture("./resources/flappy_sprite_sheet.png"));
+    }catch(std::exception any){
+        e->add(e->gsys->loadTexture("../exec_env/resources/flappy_sprite_sheet.png"));
+    }
     e->get<Texture>("Texture")->defineSprite({148 * 0, 0, 144, 256}, "background");
     e->get<Texture>("Texture")->defineSprite({148 * 2, 0, 160, 56}, "floor");
     e->get<Texture>("Texture")->defineSprite({0, 512 - 28, 28, 28}, "bird");
@@ -144,25 +159,31 @@ int main(int argc, char **argv)
     
 
     // bird
-    auto object = make_shared<GravityObject>();
-    object->attachInitBehaviour([](Object *self){
-        static_cast<GravityObject*>(self)->offset = {100, 300};
+    auto bird = shared_ptr<PhysicsObject>(box);
+    bird->attachInitBehaviour([](Object *self){
+        static_cast<Object2D*>(self)->offset = {100, 100};
         auto sprite = self->getEngine()->get<Texture>("Texture")->buildSprite("bird");
         sprite->scaleX(84);
         sprite->setDrawHeight(2);
         self->add(sprite);
+        try{
         self->add(make_shared<AudioPlayer>("resources/sfx_jump.mp3"));
+        }catch(std::exception any){
+        self->add(make_shared<AudioPlayer>("../exec_env/resources/sfx_jump.mp3"));
+        }
+    
         self->get<AudioPlayer>(1)->setVolume(25);
         self->add(make_shared<BirdHandler>());
     });
 
-    object->attachLoopBehaviour([](Object *self, double delta){
-        shared_ptr<GravityObject> t_self = static_pointer_cast<GravityObject>(self->shared_from_this());
-        if(t_self->offset.y > 520)
-            t_self->offset.y = 520;
-    });
+    // death
 
-    e->add(object);
+    e->add(bird);
+
+    e->add(make_shared<Object>("World"));
+    e->get("World")->attachLoopBehaviour([&](Object *self, double delta){
+        boxworld.update();
+    });
 
     // pipes
     e->add(make_shared<PipeSpawner>());

@@ -48,7 +48,10 @@ protected:
     function<void(Object *)> init_behavior;
     function<void(Object *, double)> loop_behavior;
 public:
+    string desiredName;
     weak_ptr<Engine> engine_view;
+
+    Object(string desiredName = "Object");
 
     virtual void init();
 
@@ -66,20 +69,45 @@ public:
      * @brief The name the node is given by the parrent. May be appended by an index if another child already has that name.
      * @return string 
      */
-    virtual string desiredName();
+    string getDesiredName();
 
     string getName();
 
     /**
+     * @brief Returns a deep copy of the object, its children, etc. The clone is registered in the systems the original is registered in.
+     * @return shared_ptr<Object> 
+     */
+    /*virtual shared_ptr<Object> clone()
+    {
+        shared_ptr<Object> c = make_shared<Object>(this);
+        
+        for(auto child : children)
+        {
+            c->addChild(child->clone());
+        }
+        return c;
+    }*/
+
+    /**
+     * @brief A callable which is called in the object's loop
+     * @param behaviour
+     */
+    void attachInitBehaviour(function<void(Object *)> behavior);
+
+    /**
+     * @brief A callable which is called in the object's init
+     * @param behaviour
+     */
+    void attachLoopBehaviour(function<void(Object *, double)> behavior);
+
+    /**
      * @brief Add child to the object. Child is appended to the back of the child list.
-     *
      * @param child child object
      */
     void addChild(shared_ptr<Object> child);
 
     /**
      * @brief Short alias for addChild.
-     *
      * @param child child object
      */
     inline void add(shared_ptr<Object> child)
@@ -89,7 +117,6 @@ public:
 
     /**
      * @brief Get child by index.
-     *
      * @param index position of the child in the child list
      * @return shared_ptr<Object>
      * @throws out_of_range exception if the child index is out of range
@@ -98,7 +125,6 @@ public:
 
     /**
      * @brief Get child by index, downcast to the template type.
-     *
      * @param index position of the child in the child list
      * @tparam T the type to downcast the child to
      * @return shared_ptr<Object>
@@ -195,22 +221,7 @@ public:
      * @throws std::out_of_range exception if no child has that name
      */
     shared_ptr<Object> removeChild(string name);
-    
-    /**
-     * @brief A callable which is called in the object's loop
-     *
-     * @param behaviour
-     */
-    void attachInitBehaviour(function<void(Object *)> behavior);
 
-    /**
-     * @brief A callable which is called in the object's init
-     *
-     * @param behaviour
-     */
-    void attachLoopBehaviour(function<void(Object *, double)> behavior);
-
-    // avoid attachEventHandler(shared_ptr);
 };
 
 /**
@@ -220,7 +231,11 @@ class Object2D : public Object
 {
 public:
     Vect2f offset;           ///< offset relative to parent, or global position if root
-    const Vect2f position(); ///< actual position, result of parent.position + offset
+    const Vect2f getPosition(); ///< actual position, result of parent.position + offset
+    void setPosition(Vect2f pos) ///< set offset such that getPosition() returns pos
+    {
+        offset -= getPosition() - pos;
+    }
 
     Vect2f base_size;    ///< the 'original' size of the object, can be used to remove scaling
     float scale = 1;     ///< factor by which to scale the object
@@ -232,16 +247,14 @@ public:
     /**
      * @brief Construct a new Object2D
      */
-    Object2D();
-
-    virtual string desiredName() override;
+    Object2D(string desiredName = "Object2D");
 
     /**
      * @brief Construct a new Object2D
      * @param offset
      * @param base_size
      */
-    Object2D(Vect2f offset, Vect2f base_size);
+    Object2D(Vect2f offset, Vect2f base_size, string desiredName = "Object2D");
 };
 
 /**
@@ -275,9 +288,7 @@ public:
      * @param offset
      * @param base_size
      */
-    GraphicObject(Vect2f offset, Vect2f base_size);
-
-    virtual string desiredName() override;
+    GraphicObject(Vect2f offset, Vect2f base_size, string desiredName = "GraphicObject");
 
     /**
      * @brief Set the draw Height of the object. When objects are occupying the same space,
@@ -300,11 +311,14 @@ class Texture : public Object
     SDL_Texture *texture;
     Vect2i size;
     map<string, Sprite> sprites;
-
 public:
 
-    virtual string desiredName() override;
-
+    /**
+     * @brief Construct a new Texture object
+     * @param desiredName
+     */
+    Texture(string desiredName = "Texture");
+    
     /**
      * @brief Set the internal SDL_Texture
      * @param render SDL_Renderer
@@ -347,10 +361,6 @@ class Sprite : public GraphicObject
     shared_ptr<Texture> texture; ///< Texture for the sprite to use
     SDL_Rect src_region;         ///< The region of the underlying texture this sprite uses
 public:
-    /**
-     * @brief Construct a new Sprite object
-     */
-    Sprite();
 
     /**
      * @brief Construct a new Sprite object
@@ -359,9 +369,7 @@ public:
      * @param offset offset of the sprite
      * @param size size of the sprite
      */
-    Sprite(shared_ptr<Texture> texture, Vect4i src_region, Vect2f offset, Vect2f size);
-
-    virtual string desiredName() override;
+    Sprite(shared_ptr<Texture> texture, Vect4i src_region, Vect2f offset, Vect2f size, string desiredName = "Sprite");
 
     /**
      * @brief Scale size to have a width of 'x'
@@ -388,14 +396,12 @@ class AudioPlayer : public Object
     int volume;
 public:
     bool loop = false;
-    AudioPlayer(string file)
+    AudioPlayer(string file, string desiredName = "Sprite") : Object(desiredName)
     {
         sound = Mix_LoadWAV(file.c_str());
         if (!sound)
             throw std::runtime_error(string() + "Failed to load WAV file: " + Mix_GetError());
     }
-
-    virtual string desiredName() override;
 
     int play()
     {
@@ -434,7 +440,6 @@ public:
 class EngineController : public Object
 {
     Clock timeout;
-
 public:
     void init() override;
 

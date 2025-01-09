@@ -12,6 +12,11 @@
 #include <engine.hpp>
 #include <graphic_system.hpp>
 
+Object::Object(string desiredName)
+{
+    this->desiredName = desiredName;
+}
+
 void Object::init()
 {
     if (init_behavior)
@@ -34,9 +39,9 @@ shared_ptr<Object> Object::getParent()
     return parent_view.lock();
 }
 
-string Object::desiredName()
+string Object::getDesiredName()
 {
-    return "Object";
+    return desiredName;
 }
 
 string Object::getName()
@@ -49,7 +54,7 @@ void Object::addChild(shared_ptr<Object> child)
     if (std::find(children.begin(), children.end(), child) != children.end())
         return; // child already exists
     // give child name and insert
-    string name = child->desiredName();
+    string name = child->getDesiredName();
     string unique_name = name;
     map<string, shared_ptr<Object>>::iterator result;
     for(int i = 1; children_map.find(unique_name) != children_map.end(); i++)
@@ -145,13 +150,13 @@ void Object::attachLoopBehaviour(function<void(Object *, double)> behavior)
     this->loop_behavior = behavior;
 }
 
-const Vect2f Object2D::position()
+const Vect2f Object2D::getPosition()
 {
     auto parent = dynamic_pointer_cast<Object2D>(parent_view.lock());
     if (parent.get() == nullptr)
         return offset;
     else
-        return parent->position() + offset;
+        return parent->getPosition() + offset;
 }
 
 const Vect2f Object2D::size()
@@ -163,16 +168,10 @@ const Vect2f Object2D::size()
         return base_size * (scale * parent->scale);
 }
 
-Object2D::Object2D()
-{
-}
+Object2D::Object2D(string desiredName) : Object(desiredName)
+{}
 
-string Object2D::desiredName()
-{
-    return "Object2D";
-}
-
-Object2D::Object2D(Vect2f offset, Vect2f base_size)
+Object2D::Object2D(Vect2f offset, Vect2f base_size, string desiredName) : Object(desiredName)
 {
     this->offset = offset;
     this->base_size = base_size;
@@ -180,18 +179,11 @@ Object2D::Object2D(Vect2f offset, Vect2f base_size)
 }
 
 GraphicObject::GraphicObject()
-{
-}
+{}
 
-string GraphicObject::desiredName()
-{
-    return "GraphicObject";
-}
-
-GraphicObject::GraphicObject(Vect2f offset, Vect2f base_size)
-    : Object2D(offset, base_size)
-{
-}
+GraphicObject::GraphicObject(Vect2f offset, Vect2f base_size, string desiredName)
+    : Object2D(offset, base_size, desiredName)
+{}
 
 void GraphicObject::setDrawHeight(int height)
 {
@@ -227,10 +219,8 @@ void GraphicObject::setDrawColor(SDL_Renderer *render, Color c)
     }
 }
 
-string Texture::desiredName()
-{
-    return "Texture";
-}
+Texture::Texture(string desiredName) : Object(desiredName)
+{}
 
 void Texture::setTexture(SDL_Renderer *render, string filepath)
 {
@@ -248,7 +238,7 @@ SDL_Texture *Texture::getTexture()
 void Texture::defineSprite(Vect4i src_region, string name)
 {
     Sprite sprite(static_pointer_cast<Texture>(shared_from_this()), src_region, Vect2f(0, 0), Vect2f(src_region.z(), src_region.w()));
-    sprites[name] = sprite;
+    sprites.emplace(name, sprite);
 }
 
 shared_ptr<Sprite> Texture::buildSprite(string name)
@@ -262,19 +252,11 @@ Texture::~Texture()
     SDL_DestroyTexture(texture);
 }
 
-Sprite::Sprite()
-{
-}
-
-Sprite::Sprite(shared_ptr<Texture> texture, Vect4i src_region, Vect2f offset, Vect2f size) : GraphicObject(offset, size)
+Sprite::Sprite(shared_ptr<Texture> texture, Vect4i src_region, Vect2f offset, Vect2f size, string desiredName) 
+    : GraphicObject(offset, size, desiredName)
 {
     this->texture = texture;
     this->src_region = {src_region.x(), src_region.y(), src_region.z(), src_region.w()};
-}
-
-string Sprite::desiredName()
-{
-    return "Sprite";
 }
 
 void Sprite::scaleX(int x)
@@ -289,7 +271,7 @@ void Sprite::scaleY(int y)
 
 void Sprite::draw()
 {
-    auto pos = gsys_view->screenTransform({(int)position().x, (int)position().y});
+    auto pos = gsys_view->screenTransform({(int)getPosition().x, (int)getPosition().y});
     SDL_Rect dest = {
         pos.x, pos.y,
         (int)(size().x * gsys_view->camera_zoom), (int)(size().y * gsys_view->camera_zoom)};
@@ -297,11 +279,6 @@ void Sprite::draw()
         // TODO: copy ex supports hardware acceld rotation in the last 3 params
         // which wwe currently do not support
         std::cout << SDL_GetError() << '\n';
-}
-
-string AudioPlayer::desiredName()
-{
-    return "AudioPlayer";
 }
 
 void EngineController::init()

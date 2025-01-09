@@ -38,10 +38,10 @@ void Engine::start()
 {
     if (!run.try_lock())
         throw std::runtime_error("Engine already running!");
-    stop = false;
+    is_stopped = false;
     tick_delay = 1.0 / 60;
     // tick_delay = 0; // test at max run speed
-    while (!stop)
+    while (!is_stopped)
     {
         // update hardware events
         SDL_Event e;
@@ -49,7 +49,7 @@ void Engine::start()
         {
             if (e.type == SDL_QUIT)
             {
-                stop = true;
+                is_stopped = true;
                 break;
             }
             else
@@ -127,6 +127,6 @@ void EngineController::loop(double delta)
         auto shared_engine = engine_view.lock();
         if (!shared_engine)
             return;
-        shared_engine->stop = true;
+        shared_engine->is_stopped = true;
     }
 }

@@ -19,7 +19,7 @@ class Vect2 : public Vect
      * 
      */
 public:
-    Num x, y;
+    Num x = 0, y = 0;
     constexpr Vect2()
     {
         x = 0;
@@ -77,6 +77,11 @@ public:
     {
         // only exists for sqrt valid types, SFINAE
         return sqrt(x * x + y * y);
+    }
+
+    inline Num lengthSquared() const
+    {
+        return x * x + y * y;
     }
 };
 namespace std {
