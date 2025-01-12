@@ -34,6 +34,7 @@ class EngineController;
 class GraphicSystem;
 class EventDispatcher;
 #include "objects.hpp"
+#include "physics.hpp"
 
 class HardwareEventBuilder
 {
@@ -58,6 +59,7 @@ class Engine : public std::enable_shared_from_this<Engine>
 public:
     GraphicSystem *gsys;
     EventDispatcher *disp;
+    World *world;
 
     /**
      * @brief Call before creating any engine objects. Enables SDL utilities and other global state required for the Engine class to work.
@@ -87,7 +89,7 @@ public:
         SDL_Quit();
     }
 
-    Engine(Vect2i window_size = {1024, 720});
+    Engine(Vect2i window_size = {1024, 720}, Vect2f gravity = {0, 1024});
 
     void start();
 

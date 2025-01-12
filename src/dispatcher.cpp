@@ -18,9 +18,14 @@ EventDispatcher::EventDispatcher()
     front = &buffers[1];
 }
 
-void EventDispatcher::addEventHandler(shared_ptr<HandlerI> handle)
+void EventDispatcher::registerEventHandler(shared_ptr<HandlerI> handle)
 {
     handles.emplace(handle);
+}
+
+void EventDispatcher::unregisterEventHandler(shared_ptr<HandlerI> handle)
+{
+    handles.erase(handle);
 }
 
 void EventDispatcher::addEvent(shared_ptr<Event> e)

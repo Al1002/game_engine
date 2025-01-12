@@ -12,9 +12,8 @@ class Event;
 class EventDispatcher;
 #include "objects.hpp"
 
-class ObjectManager : public std::enable_shared_from_this<Engine>
+class ObjectManager : public std::enable_shared_from_this<ObjectManager>
 {
-    
     //thread_pool::static_pool workers;
     unordered_set<shared_ptr<Object>> bucket;
     unordered_set<shared_ptr<Object>> dead_bucket;

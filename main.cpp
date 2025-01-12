@@ -25,23 +25,44 @@
 #include <graphic_system.hpp>
 #include <physics.hpp>
 
-class MouseEvent;
+class Button;
+class ButtonHandler;
 
-class Button : public Object2D, Handler<MouseEvent>
+class Button : public Object2D
 {
 public:
-    virtual void handle(shared_ptr<MouseEvent> e)
+    Button(string desiredName) : Object2D(desiredName)
     {
+    }
+    static shared_ptr<Button> create(string desiredName = "Button");
+    virtual void onClick()
+    {
+        std::cout<<"click\n";
+    };
+};
 
+class ButtonHandler : public Handler<MouseEvent, Button>
+{
+public:
+    virtual void handle(shared_ptr<MouseEvent> e) override
+    {
+        if(e->is_down)
+            if(e->sdl_event.x > getOwner()->getPosition().x &&
+                e->sdl_event.x < getOwner()->getPosition().x + getOwner()->getSize().x &&
+                e->sdl_event.x > getOwner()->getPosition().y &&
+                e->sdl_event.x < getOwner()->getPosition().y + getOwner()->getSize().y)
+                getOwner()->onClick();
     }
 };
 
-
-class DynamicBody : public Object2D
+shared_ptr<Button> Button::create(string desiredName)
 {
-    
-};
+    shared_ptr<Button> button = make_shared<Button>(desiredName);
+    button->attachHandler(make_shared<ButtonHandler>());
+    return button;
+}
 
+/**** 
 class GravityObject : public Object2D
 {
 public:
@@ -59,24 +80,20 @@ public:
         Object::loop(delta);
     }
 };
+*/
 
-class BirdHandler : public ParentHandler<KeyboardEvent, GravityObject>
+class BirdHandler : public Handler<KeyboardEvent, PhysicsObject>
 {
-    void handle(shared_ptr<KeyboardEvent> e, shared_ptr<GravityObject> parent) override
+public:
+    void handle(shared_ptr<KeyboardEvent> e) override
     {
-        if (e->sdl_event.keysym.sym == 'a')
-            //that->accel.x = -600;
-            0 == 0;
-        if (e->sdl_event.keysym.sym == 'd')
-            //that->accel.x = 600;
-            0 == 0;
-        if (e->sdl_event.keysym.sym == 'w')
+        if(!e->is_down)
+            return;
+        if (e->sdl_event.keysym.sym == 'w' || e->sdl_event.keysym.sym == ' ' || e->sdl_event.keysym.sym == SDLK_UP)
         {
-            parent->accel.y = -600;
-            parent->get<AudioPlayer>(1)->play();
+            getOwner()->body->SetLinearVelocity({0, -600.0f / 1024});
+            getOwner()->get<AudioPlayer>(1)->play();
         }
-        if (e->sdl_event.keysym.sym == 's')
-            parent->accel.y = 600;
     }
 };
 
@@ -92,15 +109,17 @@ public:
         time.start_timer();
 
         add(make_shared<Object2D>());
+        get<Object2D>(0)->offset = {500, 500 + (float)(rand() % 200)};
         get(0)->add(getEngine()->get<Texture>("Texture")->buildSprite("green_pipe_bellow"));
         get<Sprite>("Object2D/Sprite")->scaleX(100);
-        get<Sprite>("Object2D/Sprite")->offset = {-50, 75};
+        get<Sprite>("Object2D/Sprite")->offset = {0, 75};
+        get(0)->add(make_shared<PhysicsObject>(get<Sprite>("Object2D/Sprite")->offset, get<Sprite>("Object2D/Sprite")->getSize(), b2_kinematicBody));
         get(0)->add(getEngine()->get<Texture>("Texture")->buildSprite("green_pipe_above"));
         get<Sprite>("Object2D/Sprite_1")->scaleX(100);
-        get<Sprite>("Object2D/Sprite_1")->offset = {-50, -75 - get<Sprite>("Object2D/Sprite_1")->size().y};
-        get<Object2D>(0)->offset = {500, 200 + (float)(rand() % 200)};
+        get<Sprite>("Object2D/Sprite_1")->offset = {0, -75 - get<Sprite>("Object2D/Sprite_1")->getSize().y};
+        get(0)->add(make_shared<PhysicsObject>(get<Sprite>("Object2D/Sprite_1")->offset, get<Sprite>("Object2D/Sprite_1")->getSize(), b2_kinematicBody));
         get(0)->attachLoopBehaviour([](Object *self, double delta){
-            shared_ptr<Object2D> t_self = static_pointer_cast<GravityObject>(self->shared_from_this());
+            shared_ptr<Object2D> t_self = static_pointer_cast<Object2D>(self->shared_from_this());
             t_self->offset.x -= 100 * delta;
             if(t_self->offset.x < -100)
                 t_self->getParent()->removeChild(t_self->getName());
@@ -119,15 +138,11 @@ int main(int argc, char **argv)
 {
     Engine::enable();
     // TODO: deepcpy for object cloning, analog to packed scenes in godot
-    World boxworld = World({0, 0.1});
-    shared_ptr<PhysicsObject> box = make_shared<PhysicsObject>(boxworld.world, Vect2f(0,0), Vect2f(84,84), b2_dynamicBody);
-    boxworld.objects.emplace(box);
-    shared_ptr<PhysicsObject> floor = make_shared<PhysicsObject>(boxworld.world, Vect2f(0, 520), Vect2f(420,100), b2_staticBody);
-    boxworld.objects.emplace(floor);
-
-
-    auto e = make_shared<Engine>(Vect2i(400, 720));
     
+    auto e = make_shared<Engine>(Vect2i(400, 720), Vect2f(0, 2000));
+    e->add(Button::create());
+    e->get<Button>("Button")->base_size = {400, 720};
+
     // sprites, sizes gotten with brute force guessing
     try{
         e->add(e->gsys->loadTexture("./resources/flappy_sprite_sheet.png"));
@@ -142,16 +157,18 @@ int main(int argc, char **argv)
     
     // backround
     e->add(e->get<Texture>("Texture")->buildSprite("background"));
+    e->get<Sprite>("Sprite")->offset = {400/2, 720/2};
     e->get<Sprite>("Sprite")->scaleY(720);
     e->get<Sprite>("Sprite")->setDrawHeight(-2);
     
     // floor
-    e->add(e->get<Texture>("Texture")->buildSprite("floor"));
-    e->get<Sprite>("Sprite_1")->scaleX(480);
-    e->get<Sprite>("Sprite_1")->offset = {0, 580};
-    e->get<Sprite>("Sprite_1")->setDrawHeight(1);
-    e->get<Sprite>("Sprite_1")->attachLoopBehaviour([](Object *self, double delta){
-        shared_ptr<Object2D> t_self = static_pointer_cast<GravityObject>(self->shared_from_this());
+    e->add(make_shared<PhysicsObject>(Vect2f(0, 0), Vect2f(420,168), b2_staticBody));
+    e->get<PhysicsObject>("PhysicsObject")->offset = {400/2, 650};
+    e->get("PhysicsObject")->add(e->get<Texture>("Texture")->buildSprite("floor"));
+    e->get<Sprite>("PhysicsObject/Sprite")->scaleX(480);
+    e->get<Sprite>("PhysicsObject/Sprite")->setDrawHeight(1);
+    e->get<Sprite>("PhysicsObject/Sprite")->attachLoopBehaviour([](Object *self, double delta){
+        shared_ptr<Object2D> t_self = static_pointer_cast<Object2D>(self->shared_from_this());
         t_self->offset.x -= 100 * delta;
         if(t_self->offset.x < -36)
             t_self->offset.x = 0;
@@ -159,7 +176,7 @@ int main(int argc, char **argv)
     
 
     // bird
-    auto bird = shared_ptr<PhysicsObject>(box);
+    auto bird = make_shared<PhysicsObject>(Vect2f(0,0), Vect2f(6,6), b2_dynamicBody);
     bird->attachInitBehaviour([](Object *self){
         static_cast<Object2D*>(self)->offset = {100, 100};
         auto sprite = self->getEngine()->get<Texture>("Texture")->buildSprite("bird");
@@ -173,17 +190,12 @@ int main(int argc, char **argv)
         }
     
         self->get<AudioPlayer>(1)->setVolume(25);
-        self->add(make_shared<BirdHandler>());
+        self->attachHandler(make_shared<BirdHandler>());
     });
 
     // death
 
     e->add(bird);
-
-    e->add(make_shared<Object>("World"));
-    e->get("World")->attachLoopBehaviour([&](Object *self, double delta){
-        boxworld.update();
-    });
 
     // pipes
     e->add(make_shared<PipeSpawner>());

@@ -16,19 +16,23 @@ class KeyboardEvent;
 #include <dispatcher.hpp>
 #include <objects.hpp>
 #include <events.hpp>
+#include <physics.hpp>
 
 shared_ptr<Event> HardwareEventBuilder::build(SDL_Event e)
 {
-    if (e.type == SDL_KEYDOWN)
+    if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)
         return static_pointer_cast<Event>(make_shared<KeyboardEvent>(e));
+    else if(e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP)
+        return static_pointer_cast<Event>(make_shared<MouseEvent>(e));
     else
         return shared_ptr<Event>();
 }
 
-Engine::Engine(Vect2i window_size)
+Engine::Engine(Vect2i window_size, Vect2f gravity)
 {
     gsys = new GraphicSystem(window_size);
     disp = new EventDispatcher;
+    world = new World({gravity.x, gravity.y});
     root = make_shared<Object>();
     registerObj(root);
     registerObj(make_shared<EngineController>()); // does not exist in root, only bucket - bad
@@ -68,6 +72,7 @@ void Engine::start()
         this->update(delta);
         disp->dispatch();
         gsys->update();
+        world->update();
         std::cout << "Tick end\n\n";
     }
     run.unlock();
@@ -83,10 +88,14 @@ void Engine::registerObj(shared_ptr<Object> obj)
     {
         gsys->registerObj(graphic);
     }
-    shared_ptr<HandlerI> handle = dynamic_pointer_cast<HandlerI>(obj);
-    if (handle)
+    shared_ptr<PhysicsObject> physics = dynamic_pointer_cast<PhysicsObject>(obj);
+    if (physics)
     {
-        disp->addEventHandler(handle);
+        world->registerObj(physics);
+    }
+    for (auto handle : obj->handlers)
+    {
+        disp->registerEventHandler(handle);
     }
     for (auto &iter : obj->children)
     {
@@ -100,11 +109,21 @@ void Engine::unregisterObj(shared_ptr<Object> obj)
     {
         unregisterObj(*iter);
     }
+    for (auto handle : obj->handlers)
+    {
+        disp->registerEventHandler(handle);
+    }
     shared_ptr<GraphicObject> graphic = dynamic_pointer_cast<GraphicObject>(obj);
     if (graphic)
     {
         gsys->unregisterObj(graphic);
     }
+    shared_ptr<PhysicsObject> physics = dynamic_pointer_cast<PhysicsObject>(obj);
+    if (physics)
+    {
+        world->unregisterObj(physics);
+    }
+    
     obj->engine_view.reset();
     dead_bucket.emplace(obj);
 }

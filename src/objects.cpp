@@ -11,6 +11,8 @@
 
 #include <engine.hpp>
 #include <graphic_system.hpp>
+#include <events.hpp>
+#include <dispatcher.hpp>
 
 Object::Object(string desiredName)
 {
@@ -31,6 +33,8 @@ void Object::loop(double delta)
 
 shared_ptr<Engine> Object::getEngine()
 {
+    //if(!engine_view.lock())
+    //    throw std::runtime_error("Object not owned by engine");
     return engine_view.lock();
 }
 
@@ -49,6 +53,20 @@ string Object::getName()
     return name;
 }
 
+void Object::attachHandler(shared_ptr<HandlerI> handle)
+{
+    handle->setOwner(shared_from_this());
+    handlers.push_back(handle);
+    if(engine_view.lock())
+        getEngine()->disp->registerEventHandler(handle);
+}
+
+void Object::dettachHandler(shared_ptr<HandlerI> handle)
+{
+    handlers.remove(handle);
+    handle->clearOwner();
+}
+
 void Object::addChild(shared_ptr<Object> child)
 {
     if (std::find(children.begin(), children.end(), child) != children.end())
@@ -56,7 +74,6 @@ void Object::addChild(shared_ptr<Object> child)
     // give child name and insert
     string name = child->getDesiredName();
     string unique_name = name;
-    map<string, shared_ptr<Object>>::iterator result;
     for(int i = 1; children_map.find(unique_name) != children_map.end(); i++)
     {
         // if the name is already unique, we dont enter this loop and it remains as it was originally
@@ -159,7 +176,7 @@ const Vect2f Object2D::getPosition()
         return parent->getPosition() + offset;
 }
 
-const Vect2f Object2D::size()
+const Vect2f Object2D::getSize()
 {
     auto parent = dynamic_pointer_cast<Object2D>(parent_view.lock());
     if (parent.get() == nullptr)
@@ -273,8 +290,8 @@ void Sprite::draw()
 {
     auto pos = gsys_view->screenTransform({(int)getPosition().x, (int)getPosition().y});
     SDL_Rect dest = {
-        pos.x, pos.y,
-        (int)(size().x * gsys_view->camera_zoom), (int)(size().y * gsys_view->camera_zoom)};
+        pos.x - (int)getSize().x / 2, pos.y - (int)getSize().y / 2,
+        (int)(getSize().x * gsys_view->camera_zoom), (int)(getSize().y * gsys_view->camera_zoom)};
     if (SDL_RenderCopyEx(render_view, texture->getTexture(), &src_region, &dest, 0, NULL, SDL_FLIP_NONE))
         // TODO: copy ex supports hardware acceld rotation in the last 3 params
         // which wwe currently do not support

@@ -20,7 +20,7 @@
 #include "colors.h" // #defined RGB_COLORs
 #include "vects.hpp" // Mathematical vectors
 
-// eefined here
+// defined here
 class Object;
 class Object2D;
 class GraphicObject;
@@ -28,6 +28,7 @@ class Texture;
 class Sprite;
 class AudioPlayer;
 class EngineController;
+class HandlerI;
 
 // extern
 class GraphicSystem;
@@ -47,6 +48,7 @@ protected:
     string name;
     function<void(Object *)> init_behavior;
     function<void(Object *, double)> loop_behavior;
+    list<shared_ptr<HandlerI>> handlers;
 public:
     string desiredName;
     weak_ptr<Engine> engine_view;
@@ -73,6 +75,15 @@ public:
 
     string getName();
 
+    /**
+     * @brief Attach a handler to the object, and register it in the engine if it exists.
+     * @param handle 
+     */
+    void attachHandler(shared_ptr<HandlerI> handle);
+    
+
+    void dettachHandler(shared_ptr<HandlerI> handle);
+    
     /**
      * @brief Returns a deep copy of the object, its children, etc. The clone is registered in the systems the original is registered in.
      * @return shared_ptr<Object> 
@@ -239,7 +250,7 @@ public:
 
     Vect2f base_size;    ///< the 'original' size of the object, can be used to remove scaling
     float scale = 1;     ///< factor by which to scale the object
-    const Vect2f size(); ///< actual size of the object, scale effected by parrent
+    const Vect2f getSize(); ///< actual size of the object, scale effected by parrent
 
     Vect2f rotation; ///< rotation relative to the parent
     const Vect2f orientation() { return {0, 0}; };
