@@ -31,7 +31,7 @@ class ButtonHandler;
 class Button : public Object2D
 {
 public:
-    Button(string desiredName) : Object2D(desiredName)
+    Button(string desiredName = "Button") : Object2D(desiredName)
     {
     }
     static shared_ptr<Button> create(string desiredName = "Button");
@@ -40,11 +40,10 @@ public:
         std::cout<<"click\n";
     };
 };
-
-class ButtonHandler : public Handler<MouseEvent, Button>
+class ButtonHandler : public Handler<MouseButtonEvent, Button>
 {
 public:
-    virtual void handle(shared_ptr<MouseEvent> e) override
+    virtual void handle(shared_ptr<MouseButtonEvent> e) override
     {
         if(e->is_down)
             if(e->sdl_event.x > getOwner()->getPosition().x &&
@@ -61,6 +60,7 @@ shared_ptr<Button> Button::create(string desiredName)
     button->attachHandler(make_shared<ButtonHandler>());
     return button;
 }
+
 
 /**** 
 class GravityObject : public Object2D
@@ -128,6 +128,43 @@ public:
     }
 };
 
+
+class StartGameButton : public Button
+{
+public:
+    bool isStart = false;
+    void onClick()override
+    {
+        if(isStart)
+            return;
+        else
+            isStart = true; 
+        getEngine()->add(make_shared<Object>("Game"));
+        // bird
+        auto bird = make_shared<PhysicsObject>(Vect2f(0,0), Vect2f(6,6), b2_dynamicBody);
+        bird->attachInitBehaviour([](Object *self){
+        static_cast<Object2D*>(self)->offset = {100, 100};
+        auto sprite = self->getEngine()->get<Texture>("Texture")->buildSprite("bird");
+        sprite->scaleX(84);
+        sprite->setDrawHeight(2);
+        self->add(sprite);
+        try{
+            self->add(make_shared<AudioPlayer>("resources/sfx_jump.mp3"));
+        }catch(std::exception any){
+            self->add(make_shared<AudioPlayer>("../exec_env/resources/sfx_jump.mp3"));
+        }
+    
+        self->get<AudioPlayer>(1)->setVolume(25);
+        self->attachHandler(make_shared<BirdHandler>());
+        });
+        getEngine()->get("Game")->add(bird);
+
+        // pipes
+        getEngine()->get("Game")->add(make_shared<PipeSpawner>());
+    
+    }
+};
+
 #include <exception>
 
 #ifdef __WIN32__ // the mingw SDL expects WinMain
@@ -140,9 +177,6 @@ int main(int argc, char **argv)
     // TODO: deepcpy for object cloning, analog to packed scenes in godot
     
     auto e = make_shared<Engine>(Vect2i(400, 720), Vect2f(0, 2000));
-    e->add(Button::create());
-    e->get<Button>("Button")->base_size = {400, 720};
-
     // sprites, sizes gotten with brute force guessing
     try{
         e->add(e->gsys->loadTexture("./resources/flappy_sprite_sheet.png"));
@@ -175,30 +209,9 @@ int main(int argc, char **argv)
     });
     
 
-    // bird
-    auto bird = make_shared<PhysicsObject>(Vect2f(0,0), Vect2f(6,6), b2_dynamicBody);
-    bird->attachInitBehaviour([](Object *self){
-        static_cast<Object2D*>(self)->offset = {100, 100};
-        auto sprite = self->getEngine()->get<Texture>("Texture")->buildSprite("bird");
-        sprite->scaleX(84);
-        sprite->setDrawHeight(2);
-        self->add(sprite);
-        try{
-        self->add(make_shared<AudioPlayer>("resources/sfx_jump.mp3"));
-        }catch(std::exception any){
-        self->add(make_shared<AudioPlayer>("../exec_env/resources/sfx_jump.mp3"));
-        }
-    
-        self->get<AudioPlayer>(1)->setVolume(25);
-        self->attachHandler(make_shared<BirdHandler>());
-    });
-
-    // death
-
-    e->add(bird);
-
-    // pipes
-    e->add(make_shared<PipeSpawner>());
+    e->add(make_shared<StartGameButton>());
+    e->get<Button>("Button")->base_size = {400, 720};
+    e->get<Button>("Button")->attachHandler(make_shared<ButtonHandler>());
     e->start();
 
     Engine::disable();

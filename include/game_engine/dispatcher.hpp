@@ -1,3 +1,4 @@
+// Class A file
 /**
  * @file dispatcher.hpp
  * @author Alex (aleksandriliev05@gmail.com)

@@ -4,9 +4,7 @@
  * @brief
  * @version 0.1
  * @date 2024-12-18
- *
  * @copyright Copyright (c) 2024
- *
  */
 
 #include <engine.hpp>
@@ -18,12 +16,34 @@ class KeyboardEvent;
 #include <events.hpp>
 #include <physics.hpp>
 
+int Engine::enable()
+{
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO) < 0)
+    {
+        std::cerr << "Failed to initialize SDL_subsystems: " << SDL_GetError() << '\n';
+        return 1;
+    }
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 8, 2048) < 0)
+    {
+        std::cerr << "Failed to initialize SDL_mixer: " << Mix_GetError() << '\n';
+        return 1;
+    }
+    srand(time(NULL));
+    return 0;
+}
+
+void Engine::disable()
+{
+    Mix_CloseAudio();
+    SDL_Quit();
+}
+
 shared_ptr<Event> HardwareEventBuilder::build(SDL_Event e)
 {
     if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)
         return static_pointer_cast<Event>(make_shared<KeyboardEvent>(e));
     else if(e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP)
-        return static_pointer_cast<Event>(make_shared<MouseEvent>(e));
+        return static_pointer_cast<Event>(make_shared<MouseButtonEvent>(e));
     else
         return shared_ptr<Event>();
 }
@@ -34,7 +54,6 @@ Engine::Engine(Vect2i window_size, Vect2f gravity)
     disp = new EventDispatcher;
     world = new World({gravity.x, gravity.y});
     root = make_shared<Object>();
-    registerObj(root);
     registerObj(make_shared<EngineController>()); // does not exist in root, only bucket - bad
 }
 
@@ -66,9 +85,6 @@ void Engine::start()
         auto delta = clock.delta_time(tick_delay);
         std::cout << string() + "Delta: (" + std::to_string(delta) + ")" << '\n';
         std::cout << "Tick start\n";
-        for (const auto& obj : dead_bucket)
-            bucket.erase(obj);
-        dead_bucket.clear(); 
         this->update(delta);
         disp->dispatch();
         gsys->update();
@@ -78,9 +94,14 @@ void Engine::start()
     run.unlock();
 }
 
+void Engine::stop()
+{
+    is_stopped = true;
+}
+
 void Engine::registerObj(shared_ptr<Object> obj)
 {
-    obj->engine_view = weak_from_this();
+    obj->engine_view = enable_shared_from_this<Engine>::weak_from_this();
     obj->init();
     bucket.insert(obj);
     shared_ptr<GraphicObject> graphic = dynamic_pointer_cast<GraphicObject>(obj);
@@ -123,18 +144,41 @@ void Engine::unregisterObj(shared_ptr<Object> obj)
     {
         world->unregisterObj(physics);
     }
-    
-    obj->engine_view.reset();
     dead_bucket.emplace(obj);
+    obj->engine_view.reset();
 }
 
 void Engine::update(double delta)
 {
-    // loops
-    for (auto iter = bucket.begin(); iter != bucket.end(); iter++)
+    for(auto obj : dead_bucket)
     {
-        (*iter)->loop(delta);
+        bucket.erase(obj);
     }
+    dead_bucket.clear();
+    for(auto obj : bucket)
+    {
+        obj->loop(delta);
+    }
+}
+
+void Engine::addChild(shared_ptr<Object> child)
+{
+    root->addChild(child);
+    registerObj(child);
+}
+
+shared_ptr<Object> Engine::removeChild(int index)
+{
+    auto obj = root->removeChild(index);
+    unregisterObj(obj);
+    return obj;
+}
+
+shared_ptr<Object> Engine::removeChild(string name)
+{
+    auto obj = root->removeChild(name);
+    unregisterObj(obj);
+    return obj;
 }
 
 void EngineController::loop(double delta)

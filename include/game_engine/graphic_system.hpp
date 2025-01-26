@@ -1,9 +1,10 @@
+// Class D file
 #pragma once
 
 #include <std_includes.hpp>
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_main.h> //
+#include <SDL2/SDL_main.h>
 #include <SDL2/SDL_image.h>
 
 #include "vects.hpp"
@@ -42,10 +43,7 @@ public:
      * @param pos
      * @return Vect2i
      */
-    Vect2i screenTransform(Vect2i pos)
-    {
-        return Vect2i((pos.x - camera_pos.x + window_size.x / 2) * camera_zoom, (pos.y - camera_pos.y + window_size.y / 2) * camera_zoom);
-    }
+    Vect2i screenTransform(Vect2i pos);
 
     void update();
 };

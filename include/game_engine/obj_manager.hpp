@@ -1,42 +1,104 @@
-
+/**
+ * @file obj_manager.hpp
+ * @author your name (you@domain.com)
+ * @brief 
+ * @version 0.1
+ * @date 2025-01-14
+ * @copyright Copyright (c) 2025
+ */
+#pragma once
 #include "std_includes.hpp"
 #include "vects.hpp" // Mathematical vectors
-#include "colors.h" // #defined RGB_COLORs
 
 // defined here
-class ObjectManager;
+class Object;
 
 // extern
-class Object;
-class Event;
-class EventDispatcher;
-#include "objects.hpp"
+class Engine;
+class HandlerI;
 
-class ObjectManager : public std::enable_shared_from_this<ObjectManager>
+/**
+ * @brief Base class for all game objects. 
+ */
+class Object : public std::enable_shared_from_this<Object>
 {
-    //thread_pool::static_pool workers;
-    unordered_set<shared_ptr<Object>> bucket;
-    unordered_set<shared_ptr<Object>> dead_bucket;
-    shared_ptr<Object> root; ///< root object
+    friend Engine;
 
+protected:
+    weak_ptr<Object> parent_view;
+    map<string, shared_ptr<Object>> children_map; ///< allows named access to children
+    list<shared_ptr<Object>> children; ///< allows indexed access to children
+    string name;
+    function<void(Object *)> init_behavior;
+    function<void(Object *, double)> loop_behavior;
+    list<shared_ptr<HandlerI>> handlers;
 public:
+    string desiredName;
+    weak_ptr<Engine> engine_view;
+
+    Object(string desiredName = "Object");
+
+    virtual void init();
+
+    virtual void loop(double delta);
+
+    shared_ptr<Engine> getEngine();
+
     /**
-     * @brief Add object for updates and initialization
-     * @param obj
+     * @brief Get the object's parent. If orphan, returns an empty shared_ptr.
+     * @return shared_ptr<Object> the object's parent
      */
-    void registerObj(shared_ptr<Object> obj);
+    shared_ptr<Object> getParent();
 
-    void unregisterObj(shared_ptr<Object> obj);
+    /**
+     * @brief The name the node is given by the parrent. May be appended by an index if another child already has that name.
+     * @return string 
+     */
+    string getDesiredName();
 
-    void update(double delta);
+    string getName();
 
-    // Composition with root object
+    /**
+     * @brief Attach a handler to the object, and register it in the engine if it exists.
+     * @param handle 
+     */
+    void attachHandler(shared_ptr<HandlerI> handle);
     
-    inline void addChild(shared_ptr<Object> child)
+
+    void dettachHandler(shared_ptr<HandlerI> handle);
+    
+    /**
+     * @brief Returns a deep copy of the object, its children, etc. The clone is registered in the systems the original is registered in.
+     * @return shared_ptr<Object> 
+     */
+    /*virtual shared_ptr<Object> clone()
     {
-        root->addChild(child);
-        registerObj(child);
-    }
+        shared_ptr<Object> c = make_shared<Object>(this);
+        
+        for(auto child : children)
+        {
+            c->addChild(child->clone());
+        }
+        return c;
+    }*/
+
+    /**
+     * @brief A callable which is called in the object's loop
+     * @param behaviour
+     */
+    void attachInitBehaviour(function<void(Object *)> behavior);
+
+    /**
+     * @brief A callable which is called in the object's init
+     * @param behaviour
+     */
+    void attachLoopBehaviour(function<void(Object *, double)> behavior);
+
+    /**
+     * @brief Add child to the object. Child is appended to the back of the child list.
+     * @param child child object
+     */
+    void addChild(shared_ptr<Object> child);
 
     /**
      * @brief Short alias for addChild.
@@ -47,28 +109,29 @@ public:
         addChild(child);
     }
 
-    template <typename T = Object>
-    inline shared_ptr<T> getChild(int index)
-    {
-        return root->getChild<T>(index);
-    }
-
     /**
-     * @brief Short alias for getChild().
+     * @brief Get child by index.
      * @param index position of the child in the child list
      * @return shared_ptr<Object>
      * @throws out_of_range exception if the child index is out of range
      */
-    template <typename T = Object>
-    inline shared_ptr<T> get(int index)
+    shared_ptr<Object> getChild(int index);
+
+    /**
+     * @brief Get child by index, downcast to the template type.
+     * @param index position of the child in the child list
+     * @tparam T the type to downcast the child to
+     * @return shared_ptr<Object>
+     * @throws std::out_of_range exception if the child index is out of range
+     * @throws  exception if the type is not an ancestor of the child's actual type
+     */
+    template <typename T>
+    inline shared_ptr<T> getChild(int index)
     {
-        return getChild<T>(index);
-    }
-#if 0
-    template <typename T = Object>
-    inline shared_ptr<T> getChild(std::vector<int> indices)
-    {
-        return root->getChild<T>(indices);
+        auto child = dynamic_pointer_cast<T>(getChild(index));
+        if (child.get() == nullptr)
+            throw std::runtime_error("Child not of specified class");
+        return child;
     }
 
     /**
@@ -79,19 +142,39 @@ public:
      * @throws std::out_of_range exception if the child index is out of range
      * @throws  exception if the type is not an ancestor of the child's actual type
      */
-    template <typename T>
-    inline shared_ptr<T> get(std::vector<int> indices)
+    template <typename T = Object>
+    inline shared_ptr<T> get(int index)
     {
-        return getChild<T>(indices);
-    }
-#endif
-    template <typename T = Object2D>
-    inline shared_ptr<T> getChild(string path)
-    {
-        return root->getChild<T>(path);
+        return getChild<T>(index);
     }
 
+    /**
+     * @brief Get child by name.
+     * @param path 
+     * @return shared_ptr<Object>
+     * @throws std::out_of_range 
+     */
+    shared_ptr<Object> getChild(string path);
+
+    /**
+     * @brief Get child by name.
+     * @param path 
+     * @return shared_ptr<Object>
+     * @throws std::out_of_range 
+     */
     template <typename T>
+    inline shared_ptr<T> getChild(string path)
+    {
+        return dynamic_pointer_cast<T>(getChild(path));
+    }
+
+    /**
+     * @brief Short alias of getChild
+     * @tparam T
+     * @param indices
+     * @return shared_ptr<T>
+     */
+    template <typename T = Object>
     inline shared_ptr<T> get(string path)
     {
         return getChild<T>(path);
@@ -103,10 +186,7 @@ public:
      * @return shared_ptr<Object> the removed child
      * @throws std::out_of_range exception if the child index is out of range
      */
-    inline shared_ptr<Object> removeChild(int index)
-    {
-        return root->removeChild(index);
-    }
+    shared_ptr<Object> removeChild(int index);
 
     /**
      * @brief Remove child by name.
@@ -114,8 +194,6 @@ public:
      * @return shared_ptr<Object> the removed child
      * @throws std::out_of_range exception if no child has that name
      */
-    inline shared_ptr<Object> removeChild(string name)
-    {
-        return root->removeChild(name);
-    }
+    shared_ptr<Object> removeChild(string name);
+
 };

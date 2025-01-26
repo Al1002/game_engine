@@ -34,6 +34,11 @@ void GraphicSystem::unregisterObj(shared_ptr<GraphicObject> obj)
     bucket.erase({obj->height, obj});
 }
 
+Vect2i GraphicSystem::screenTransform(Vect2i pos)
+{
+    return Vect2i((pos.x - camera_pos.x) * camera_zoom + window_size.x / 2, (pos.y - camera_pos.y) * camera_zoom + window_size.y / 2);
+}
+
 void GraphicSystem::update()
 {
     SDL_SetRenderDrawColor(render, RGB_WHITE, 255);

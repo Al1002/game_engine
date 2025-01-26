@@ -20,6 +20,9 @@ add_library(engine STATIC
     dispatcher.cpp
     graphic_system.cpp
     objects.cpp
+    events.cpp
+    physics.cpp
+    obj_manager.cpp
 )
 
 target_include_directories(engine PUBLIC 

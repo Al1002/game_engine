@@ -1,3 +1,5 @@
+// Class F file
+
 #pragma once
 
 #include <std_includes.hpp>
@@ -13,54 +15,40 @@ class Handler;
 #include "objects.hpp"
 
 /**
- * @brief Base object for all events
- *
+ * @brief Base object for all events.
  */
 class Event
 {
 public:
-    virtual void __enable_RTTI() final // creates a vtable, thus enabling RTTI
+    virtual void __enable_RTTI() final ///< Dummy virtual function causes the compiler to create a vtable, enabling RTTI for dynamic downcasting.
     {
     }
 };
 
+/**
+ * @brief Wrapper for SDL_KeyboardEvent. Created by keypresses.
+ */
 class KeyboardEvent : public Event
 {
 public:
     bool is_down;
     SDL_KeyboardEvent sdl_event;
-    KeyboardEvent(SDL_Event e)
-    {
-        if(e.type == SDL_KEYDOWN)
-            is_down = true;
-        else if(e.type == SDL_KEYUP)
-            is_down = false;
-        else
-            throw std::runtime_error("KeyboardEvent instance initialized with non-keyboard SDL_Event");
-        this->sdl_event = e.key;
-    }
+    KeyboardEvent(SDL_Event e);
 };
 
-class MouseEvent : public Event
+/**
+ * @brief Wrapper for SDL_MouseButtonEvent. Created by mouse clicks.
+ */
+class MouseButtonEvent : public Event
 {
 public:
     bool is_down = true;
     SDL_MouseButtonEvent sdl_event;
-    MouseEvent(SDL_Event e)
-    {
-        if(e.type == SDL_MOUSEBUTTONDOWN)
-            is_down = true;
-        else if(e.type == SDL_MOUSEBUTTONUP)
-            is_down = false;
-        else
-            throw std::runtime_error("MouseEvent instance initialized with non-mouse SDL_Event");
-        this->sdl_event = e.button;
-    }
+    MouseButtonEvent(SDL_Event e);
 };
 
 /**
  * @brief Base handler interface to enable templating
- *
  */
 class HandlerI
 {
@@ -72,8 +60,7 @@ public:
 };
 
 /**
- * @brief Base object for handlers. EventType is the accepted event type.
- *
+ * @brief Base template for handlers. EventType is the accepted event type.
  */
 template <typename EventType, typename OwnerType>
 class Handler : public HandlerI
