@@ -23,7 +23,7 @@ void GraphicSystem::registerObj(shared_ptr<GraphicObject> obj)
 {
     obj->render_view = render;
     obj->gsys_view = this;
-    bucket.emplace(obj->height, obj);
+    bucket.emplace(obj->z, obj);
 }
 
 void GraphicSystem::unregisterObj(shared_ptr<GraphicObject> obj)
@@ -31,7 +31,7 @@ void GraphicSystem::unregisterObj(shared_ptr<GraphicObject> obj)
     obj->render_view = nullptr;
     obj->gsys_view = nullptr;
     auto &buckobj = *bucket.begin();
-    bucket.erase({obj->height, obj});
+    bucket.erase({obj->z, obj});
 }
 
 Vect2i GraphicSystem::screenTransform(Vect2i pos)

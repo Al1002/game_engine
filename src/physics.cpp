@@ -37,15 +37,19 @@ void World::unregisterObj(shared_ptr<PhysicsObject> obj)
 
 void World::update()
 {
-    for (auto object : bucket)
+    for(auto object : bucket)
     {
+        Vect2f pos = object->getPosition();
+        if(pos == object->motion_check)
+            continue;
         Vect2f game_pos = object->getPosition() / pixels_per_meter;
         object->body->SetTransform({game_pos.x, game_pos.y}, 0);
     }
-    world.Step(1.0f / 60, 6, 2);
-    for (auto object : bucket)
+    world.Step(1.0f/60, 6, 2);
+    for(auto object : bucket)
     {
         b2Transform world_pos = object->body->GetTransform();
         object->setPosition({world_pos.p.x * pixels_per_meter, world_pos.p.y * pixels_per_meter});
+        object->motion_check = object->getPosition();
     }
 }

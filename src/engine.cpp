@@ -48,12 +48,14 @@ shared_ptr<Event> HardwareEventBuilder::build(SDL_Event e)
         return shared_ptr<Event>();
 }
 
-Engine::Engine(Vect2i window_size, Vect2f gravity)
+Engine::Engine(Vect2i window_size, Vect2f gravity, double tick_delay)
 {
-    gsys = new GraphicSystem(window_size);
-    disp = new EventDispatcher;
-    world = new World({gravity.x, gravity.y});
+    gsys = make_shared<GraphicSystem>(window_size);
+    disp = make_shared<EventDispatcher>();
+    world = make_shared<World>(gravity);
     root = make_shared<Object>();
+    tick_delay = 1.0f / tick_delay;
+    registerObj(root);
     registerObj(make_shared<EngineController>()); // does not exist in root, only bucket - bad
 }
 
@@ -62,8 +64,6 @@ void Engine::start()
     if (!run.try_lock())
         throw std::runtime_error("Engine already running!");
     is_stopped = false;
-    tick_delay = 1.0 / 60;
-    // tick_delay = 0; // test at max run speed
     while (!is_stopped)
     {
         // update hardware events

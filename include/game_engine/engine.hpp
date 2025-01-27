@@ -58,9 +58,9 @@ class Engine : public std::enable_shared_from_this<Engine>
     std::mutex operation;   // can either be held when runing an update or changing engine settings
 
 public:
-    GraphicSystem *gsys;
-    EventDispatcher *disp;
-    World *world;
+    shared_ptr<GraphicSystem> gsys;
+    shared_ptr<EventDispatcher> disp;
+    shared_ptr<World> world;
 
     /**
      * @brief Call before creating any engine objects. Enables SDL utilities and other global state required for the `Engine` class to work.
@@ -77,7 +77,7 @@ public:
      * @param window_size 
      * @param gravity 
      */
-    Engine(Vect2i window_size = {1024, 720}, Vect2f gravity = {0, 1024});
+    Engine(Vect2i window_size = {1024, 720}, Vect2f gravity = {0, 1024}, double tick_rate = 60);
 
     /**
      * @brief Runs the main engine loop.

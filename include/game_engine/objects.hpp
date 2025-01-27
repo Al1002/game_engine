@@ -43,7 +43,7 @@ class Object2D : public Object
 {
 public:
     Vect2f offset;           ///< offset relative to parent, or global position if root
-    const Vect2f getPosition(); ///< actual position, result of parent.position + offset
+    const Vect2f getPosition(); ///< actual position, result of parent.position + offset 
     void setPosition(Vect2f pos) ///< set offset such that getPosition() returns pos
     {
         offset -= getPosition() - pos;
@@ -53,8 +53,8 @@ public:
     float scale = 1;     ///< factor by which to scale the object
     const Vect2f getSize(); ///< actual size of the object, scale effected by parrent
 
-    Vect2f rotation; ///< rotation relative to the parent
-    const Vect2f orientation() { return {0, 0}; };
+    Vect2f rotation = {1, 0}; ///< rotation relative to the parent, as a unit vector
+    const Vect2f getOrientation();
 
     /**
      * @brief Construct a new Object2D
@@ -86,7 +86,7 @@ public:                                  // TODO: protected later?
         BLUE
     };
     Color color = RED;
-    int height = 0; ///< also called z, sets draw height/draw order for objects occupying the same space.
+    int z = 0; ///< also called z, sets draw z/draw order for objects occupying the same space.
 public:
     /**
      * @brief Construct a new GraphicObject
@@ -96,7 +96,6 @@ public:
 
     /**
      * @brief Construct a new GraphicObject
-     * 
      * @param offset
      * @param base_size
      */
@@ -104,11 +103,11 @@ public:
 
     /**
      * @brief Set the draw Height of the object. When objects are occupying the same space,
-     * the object with the largest height will be drawn above the rest.
+     * the object with the largest z will be drawn above the rest.
      * 
-     * @param height
+     * @param z
      */
-    void setDrawHeight(int height);
+    void setDrawHeight(int z);
 
     static void setDrawColor(SDL_Renderer *render, Color c);
 
@@ -146,7 +145,6 @@ public:
 
     /**
      * @brief Adds a sprite definition to the atlas. This can be used to then produce that sprite.
-     *
      */
     void defineSprite(Vect4i src_region, string name);
 
