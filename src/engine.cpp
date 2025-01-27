@@ -30,9 +30,9 @@ shared_ptr<Event> HardwareEventBuilder::build(SDL_Event e)
 
 Engine::Engine(Vect2i window_size, Vect2f gravity, double tick_delay)
 {
-    gsys = new GraphicSystem(window_size);
-    disp = new EventDispatcher;
-    world = new World({gravity.x, gravity.y});
+    gsys = make_shared<GraphicSystem>(window_size);
+    disp = make_shared<EventDispatcher>();
+    world = make_shared<World>(gravity);
     root = make_shared<Object>();
     tick_delay = 1.0f / tick_delay;
     registerObj(root);
