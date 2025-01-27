@@ -33,7 +33,7 @@ class EngineController;
 class GraphicSystem;
 #include "events.hpp"
 #include "dispatcher.hpp"
-#include "obj_manager.hpp"
+#include "base_object.hpp"
 #include "objects.hpp"
 #include "physics.hpp"
 

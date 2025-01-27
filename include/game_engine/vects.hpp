@@ -20,30 +20,35 @@ class Vect2 : public Vect
      */
 public:
     Num x = 0, y = 0;
+
     constexpr Vect2()
     {
         x = 0;
         y = 0;
     }
-    inline Vect2(const Num& x, const Num& y)
+
+    Vect2(Num x, Num y)
     {
         this->x = x;
         this->y = y;
     }
 
-    inline Vect2 operator+(const Vect2& other) const
+    Vect2 operator+(const Vect2& other) const
     {
         return {x + other.x, y + other.y};
     }
-    inline Vect2 operator-(const Vect2& other) const
+
+    Vect2 operator-(const Vect2& other) const
     {
         return {x - other.x, y - other.y};
     }
-    inline Vect2 operator*(const Num& scalar) const
+
+    Vect2 operator*(Num scalar) const
     {
         return {x * scalar, y * scalar};
     }
-    inline Vect2 operator/(const Num& scalar) const
+
+    Vect2 operator/(Num scalar) const
     {
         return {x / scalar, y / scalar};
     }
@@ -67,23 +72,30 @@ public:
         size_t h2 = std::hash<Num>()(y);
         return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2)); // Murphys combination
     }
-    inline bool operator==(const Vect2& other) const
+    
+    bool operator==(const Vect2& other) const
     {
         return other.x == x && other.y == y;
     }
 
     template <typename N = Num>
-    inline N length() const
+    N length() const
     {
         // only exists for sqrt valid types, SFINAE
         return sqrt(x * x + y * y);
     }
 
-    inline Num lengthSquared() const
+    Num lengthSquared() const
     {
         return x * x + y * y;
     }
+
+    Num dot(const Vect2<Num>& other) const
+    {
+        return x * other.x + y * other.y;
+    }
 };
+
 namespace std {
     template <typename Num>
     struct hash<Vect2<Num>>
@@ -229,6 +241,7 @@ public:
         }
         return hash;
     }
+
     bool operator==(const NVect<Dim, Num>& other) const
     {
         for(int i = 0; i < Dim; i++)
@@ -238,6 +251,8 @@ public:
         }
         return true;
     }
+    // Num dot(const NVect<Dim, Num>& other) const;
+    // NVect<Dim + 1, Num> cross(const NVect<Dim, Num>& other) const;
 };
 
 namespace std {

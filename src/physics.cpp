@@ -2,6 +2,7 @@
 
 PhysicsObject::PhysicsObject(Vect2f pos, Vect2f size, b2BodyType type, string desiredName) : Object2D(pos, size, desiredName)
 {
+    motion_check = pos;
     // the pivot in box2d is the center of an object
     def.position.Set(pos.x / pixels_per_meter, pos.y / pixels_per_meter);
     def.fixedRotation = true;

@@ -16,24 +16,8 @@ public:
     b2PolygonShape shape;
     b2FixtureDef fixt;
     b2Body *body = nullptr;
-<<<<<<< HEAD
-    PhysicsObject(Vect2f pos, Vect2f size, b2BodyType type, string desiredName = "PhysicsObject");
-=======
     Vect2f motion_check;
-    PhysicsObject(Vect2f pos, Vect2f size, b2BodyType type) : Object2D(pos, size, "PhysicsObject")
-    {
-        motion_check = pos;
-        // the pivot in box2d is the center of an object
-        def.position.Set(pos.x / pixels_per_meter, pos.y / pixels_per_meter); 
-        def.fixedRotation = true;
-        def.type = type; // 3 types - imovable, movable but immense, and able to move and be moved
-        if(type == b2_dynamicBody)
-            def.allowSleep = false;
-        shape.SetAsBox(size.x / 2 / pixels_per_meter, size.y / 2 / pixels_per_meter);
-        fixt.shape = &shape;
-        fixt.density = 1;
-    }
->>>>>>> main
+    PhysicsObject(Vect2f pos, Vect2f size, b2BodyType type, string desiredName = "PhysicsObject");
 };
 
 /**

@@ -12,8 +12,8 @@ template <typename EventType, typename OwnerType>
 class Handler;
 
 // extern
-#include "objects.hpp"
-
+#include "base_object.hpp"
+#include <SDL2/SDL.h>
 /**
  * @brief Base object for all events.
  */

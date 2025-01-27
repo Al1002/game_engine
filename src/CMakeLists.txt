@@ -22,7 +22,7 @@ add_library(engine STATIC
     objects.cpp
     events.cpp
     physics.cpp
-    obj_manager.cpp
+    base_object.cpp
 )
 
 target_include_directories(engine PUBLIC 

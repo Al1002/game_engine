@@ -34,7 +34,7 @@ class HandlerI;
 // extern
 class GraphicSystem;
 class Engine;
-#include "obj_manager.hpp"
+#include "base_object.hpp"
 
 /**
  * @brief Base class for objects supporting 2D position. Position is relative to its parent.
