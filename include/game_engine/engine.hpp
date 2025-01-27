@@ -51,7 +51,7 @@ class Engine : public std::enable_shared_from_this<Engine>
     unordered_set<shared_ptr<Object>> dead_bucket;
     shared_ptr<Object> root; ///< root object
     double tick_delay;       // minimum time between updates
-    std::mutex run;          // signifies the thread running the engine
+    std::mutex run;        // signifies the thread running the engine
     Clock clock;
     std::atomic<bool> is_stopped; // set to true to stop engine
     std::mutex operation;   // can either be held when runing an update or changing engine settings
@@ -89,7 +89,7 @@ public:
         SDL_Quit();
     }
 
-    Engine(Vect2i window_size = {1024, 720}, Vect2f gravity = {0, 1024});
+    Engine(Vect2i window_size = {1024, 720}, Vect2f gravity = {0, 1024}, double tick_rate = 60);
 
     void start();
 
