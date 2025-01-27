@@ -20,8 +20,10 @@ public:
     b2PolygonShape shape;
     b2FixtureDef fixt;
     b2Body *body = nullptr;
+    Vect2f motion_check;
     PhysicsObject(Vect2f pos, Vect2f size, b2BodyType type) : Object2D(pos, size, "PhysicsObject")
     {
+        motion_check = pos;
         // the pivot in box2d is the center of an object
         def.position.Set(pos.x / pixels_per_meter, pos.y / pixels_per_meter); 
         def.fixedRotation = true;
@@ -65,6 +67,9 @@ public:
     {
         for(auto object : bucket)
         {
+            Vect2f pos = object->getPosition();
+            if(pos == object->motion_check)
+                continue;
             Vect2f game_pos = object->getPosition() / pixels_per_meter;
             object->body->SetTransform({game_pos.x, game_pos.y}, 0);
         }
@@ -73,6 +78,7 @@ public:
         {
             b2Transform world_pos = object->body->GetTransform();
             object->setPosition({world_pos.p.x * pixels_per_meter, world_pos.p.y * pixels_per_meter});
+            object->motion_check = object->getPosition();
         }
     }
 };

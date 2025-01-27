@@ -173,7 +173,13 @@ const Vect2f Object2D::getPosition()
     if (parent.get() == nullptr)
         return offset;
     else
-        return parent->getPosition() + offset;
+    {
+        Vect2f parent_orientation = parent->getOrientation();
+        return parent->getPosition() +
+            Vect2f(
+                offset.x * parent_orientation.x - offset.y * parent_orientation.y,
+                offset.x * parent_orientation.y + offset.y * parent_orientation.x); // standard rotation matrix
+    }
 }
 
 const Vect2f Object2D::getSize()
@@ -183,6 +189,20 @@ const Vect2f Object2D::getSize()
         return base_size * scale;
     else
         return base_size * (scale * parent->scale);
+}
+
+const Vect2f Object2D::getOrientation()
+{
+    auto parent = dynamic_pointer_cast<Object2D>(parent_view.lock());
+    if (parent.get() == nullptr)
+        return rotation;
+    else
+    {
+        Vect2f parent_orientation = parent->getOrientation();
+        return Vect2f(
+                rotation.x * parent_orientation.x - rotation.y * parent_orientation.y,
+                rotation.x * parent_orientation.y + rotation.y * parent_orientation.x); // standard rotation matrix
+    }
 }
 
 Object2D::Object2D(string desiredName) : Object(desiredName)
@@ -202,18 +222,18 @@ GraphicObject::GraphicObject(Vect2f offset, Vect2f base_size, string desiredName
     : Object2D(offset, base_size, desiredName)
 {}
 
-void GraphicObject::setDrawHeight(int height)
+void GraphicObject::setDrawHeight(int z)
 {
     if (gsys_view == nullptr)
-        this->height = height;
+        this->z = z;
     else
     {
-        // while not nescessary per se, we set the height only after the object is out of the set
+        // while not nescessary per se, we set the z only after the object is out of the set
         // we technically dont have ownership until the object is outside the queue
         // also dynamic cast can never fail assumin shared_from_this() doesnt
         auto hold = gsys_view; // unregister deletes view
         gsys_view->unregisterObj(dynamic_pointer_cast<GraphicObject>(shared_from_this()));
-        this->height = height;
+        this->z = z;
         hold->registerObj(dynamic_pointer_cast<GraphicObject>(shared_from_this()));
     }
 }

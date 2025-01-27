@@ -25,7 +25,7 @@ public:
     float camera_zoom = 1;
     /**
      * Bucket for graphic objects, stored along their draw height/z.
-     * Lowest height values are drawn first and occluded by higher height vallues.
+     * Lowest z values are drawn first and occluded by higher z vallues.
      */
     set<pair<int, shared_ptr<GraphicObject>>> bucket;
 
