@@ -37,6 +37,31 @@ class Engine;
 #include "base_object.hpp"
 
 /**
+ * @brief Class for storing blueprintf of other objects and building them
+ */
+class BlueprintFactory : public Object
+{
+    map<string, shared_ptr<Object>> blueprints;
+public:
+    BlueprintFactory(string desiredName = "BlueprintFactory");
+
+    void addBlueprint(shared_ptr<Object> object, string name);
+
+    void removeBlueprint(string name);
+
+    shared_ptr<Object> build(string name);
+    
+    template<typename T>
+    shared_ptr<T> build(string name)
+    {
+        auto print = dynamic_pointer_cast<T>(build(name));
+        if (print.get() == nullptr)
+            throw std::runtime_error("Blueprint not of specified type");
+        return print;
+    }
+};
+
+/**
  * @brief Base class for objects supporting 2D position. Position is relative to its parent.
  */
 class Object2D : public Object
@@ -67,6 +92,22 @@ public:
      * @param base_size
      */
     Object2D(Vect2f offset, Vect2f base_size, string desiredName = "Object2D");
+
+    /**
+     * @brief Construct a new GraphicObject
+     * @param rect
+     */
+    Object2D(Vect4f rect, string desiredName = "Object2D");
+
+    /**
+     * @brief Scale size to have a width of 'x'
+     */
+    void scaleX(int x);
+
+    /**
+     * @brief Scale size to have a height of 'y'
+     */
+    void scaleY(int y);
 };
 
 /**
@@ -115,14 +156,15 @@ public:
 };
 
 /**
- * @brief Object representing texture data. Can be used to build sprites.
+ * @brief Object representing texture data.
  */
 class Texture : public Object
 {
     SDL_Texture *texture;
     Vect2i size;
-    map<string, Sprite> sprites;
 public:
+
+    Vect2i getSize() const;
 
     /**
      * @brief Construct a new Texture object
@@ -144,21 +186,7 @@ public:
     SDL_Texture *getTexture();
 
     /**
-     * @brief Adds a sprite definition to the atlas. This can be used to then produce that sprite.
-     */
-    void defineSprite(Vect4i src_region, string name);
-
-    /**
-     * @brief Creates a sprite previously defined by `defineSprite`
-     *
-     * @param name the name given to the sprite in `defineSprite`
-     * @return shared_ptr<Sprite>
-     */
-    shared_ptr<Sprite> buildSprite(string name);
-
-    /**
      * @brief Destroy the Texture object
-     *
      */
     ~Texture();
 };
@@ -168,6 +196,7 @@ public:
  */
 class Sprite : public GraphicObject
 {
+protected:
     shared_ptr<Texture> texture; ///< Texture for the sprite to use
     SDL_Rect src_region;         ///< The region of the underlying texture this sprite uses
 public:
@@ -175,21 +204,49 @@ public:
     /**
      * @brief Construct a new Sprite object
      * @param texture the texture to be used by the sprite
+     * @param origin the region from the texture to be used by the sprite
+     * @param size the region from the texture to be used by the sprite
+     */
+    Sprite(shared_ptr<Texture> texture, Vect2i origin, Vect2i size, string desiredName = "Sprite");
+
+    /**
+     * @brief Returns a deep copy of the object. The clone is entirely separate from the original.
+     * @return shared_ptr<Object> the cloned object
+     */
+    shared_ptr<Object> clone() const override;
+
+    /**
+     * @brief Draw the sprite
+     */
+    void draw() override;
+};
+
+/**
+ * @brief An animated sprite on the screen. 
+ */
+class AnimatedSprite : public Sprite
+{
+    int frames; ///< Number of animation frames
+    int current_frame = 0; ///< Current frame of the animation
+    int ticks_per_frame; ///< How long to hold each frame, in graphic updates
+    int current_tick = 0; 
+    Vect2i start_origin;
+public:
+    /**
+     * @brief Construct a new AnimatedSprite object
+     * @param step the offset by which to change the position of the source for each frame of the sprite
+     * @param texture the texture to be used by the sprite
      * @param src_region the region from the texture to be used by the sprite
      * @param offset offset of the sprite
      * @param size size of the sprite
      */
-    Sprite(shared_ptr<Texture> texture, Vect4i src_region, Vect2f offset, Vect2f size, string desiredName = "Sprite");
+    AnimatedSprite(int frames, int frame_duration, shared_ptr<Texture> texture, Vect2i origin, Vect2i size, string desiredName = "AnimatedSprite");
 
     /**
-     * @brief Scale size to have a width of 'x'
+     * @brief Returns a deep copy of the object. The clone is entirely separate from the original.
+     * @return shared_ptr<Object> the cloned object
      */
-    void scaleX(int x);
-
-    /**
-     * @brief Scale size to have a height of 'y'
-     */
-    void scaleY(int y);
+    shared_ptr<Object> clone() const override;
 
     /**
      * @brief Draw the sprite

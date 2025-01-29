@@ -22,6 +22,7 @@
 // smart pointer relevant
 using std::shared_ptr;
 using std::weak_ptr;
+using std::unique_ptr;
 /// \cond
 using std::enable_shared_from_this; // allows safe taking of shared_ptr<>(this) instance
 /// \endcond

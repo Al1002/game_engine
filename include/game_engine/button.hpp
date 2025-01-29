@@ -16,7 +16,9 @@ public:
     {
         std::cout<<"click\n";
     };
+    void init() final override;
 };
+
 class ButtonHandler : public Handler<MouseButtonEvent, Button>
 {
 public:
@@ -30,3 +32,8 @@ public:
                 getOwner()->onClick();
     }
 };
+
+void Button::init()
+{
+    attachHandler(make_shared<ButtonHandler>());
+}

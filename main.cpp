@@ -26,33 +26,6 @@
 #include <physics.hpp>
 #include <button.hpp>
 
-shared_ptr<Button> Button::create(string desiredName)
-{
-    shared_ptr<Button> button = make_shared<Button>(desiredName);
-    button->attachHandler(make_shared<ButtonHandler>());
-    return button;
-}
-
-
-/**** 
-class GravityObject : public Object2D
-{
-public:
-    Vect2f accel;
-    Vect2f gravity = Vect2f(0, 2000);
-    float terminal_velocity = 600;
-    void loop(double delta) override
-    {
-        accel += gravity * delta;
-        if (accel.length() > terminal_velocity)
-        {
-            accel = accel * terminal_velocity / accel.length();
-        }
-        offset = offset + accel * delta; // bad for small delta; typing is hard as pos migth require some FLOPS
-        Object::loop(delta);
-    }
-};
-*/
 
 class BirdHandler : public Handler<KeyboardEvent, PhysicsObject>
 {
@@ -64,6 +37,16 @@ public:
         if (e->sdl_event.keysym.sym == 'w' || e->sdl_event.keysym.sym == ' ' || e->sdl_event.keysym.sym == SDLK_UP)
         {
             getOwner()->body->SetLinearVelocity({0, -600.0f / 1024});
+            getOwner()->get<AudioPlayer>(1)->play();
+        }
+        if (e->sdl_event.keysym.sym == 'a' || e->sdl_event.keysym.sym == ' ' || e->sdl_event.keysym.sym == SDLK_UP)
+        {
+            getOwner()->body->SetLinearVelocity({-600.0f / 1024, 0});
+            getOwner()->get<AudioPlayer>(1)->play();
+        }
+        if (e->sdl_event.keysym.sym == 'd' || e->sdl_event.keysym.sym == ' ' || e->sdl_event.keysym.sym == SDLK_UP)
+        {
+            getOwner()->body->SetLinearVelocity({600.0f / 1024, 0});
             getOwner()->get<AudioPlayer>(1)->play();
         }
     }
@@ -78,18 +61,22 @@ public:
     {
         if(time.get_time() < 2.5)
             return;
-        time.start_timer();
+        else
+            time.start_timer();
 
         add(make_shared<Object2D>());
-        get<Object2D>(0)->offset = {500, 500 + (float)(rand() % 200)};
-        get(0)->add(getEngine()->get<Texture>("Texture")->buildSprite("green_pipe_bellow"));
+        get<Object2D>(0)->offset = {500, 400 + (float)(rand() % 300)};
+        
+        get(0)->add(get<BlueprintFactory>("/Templates")->build("green_pipe_above"));
         get<Sprite>("Object2D/Sprite")->scaleX(100);
         get<Sprite>("Object2D/Sprite")->offset = {0, 75};
         get(0)->add(make_shared<PhysicsObject>(get<Sprite>("Object2D/Sprite")->offset, get<Sprite>("Object2D/Sprite")->getSize(), b2_kinematicBody));
-        get(0)->add(getEngine()->get<Texture>("Texture")->buildSprite("green_pipe_above"));
+        
+        get(0)->add(get<BlueprintFactory>("/Templates")->build("green_pipe_bellow"));
         get<Sprite>("Object2D/Sprite_1")->scaleX(100);
         get<Sprite>("Object2D/Sprite_1")->offset = {0, -75 - get<Sprite>("Object2D/Sprite_1")->getSize().y};
         get(0)->add(make_shared<PhysicsObject>(get<Sprite>("Object2D/Sprite_1")->offset, get<Sprite>("Object2D/Sprite_1")->getSize(), b2_kinematicBody));
+        
         get(0)->attachLoopBehaviour([](Object *self, double delta){
             shared_ptr<Object2D> t_self = static_pointer_cast<Object2D>(self->shared_from_this());
             t_self->offset.x -= 100 * delta;
@@ -113,10 +100,11 @@ public:
             isStart = true; 
         getEngine()->add(make_shared<Object>("Game"));
         // bird
+
         auto bird = make_shared<PhysicsObject>(Vect2f(0,0), Vect2f(6,6), b2_dynamicBody);
         bird->attachInitBehaviour([](Object *self){
         static_cast<Object2D*>(self)->offset = {100, 100};
-        auto sprite = self->getEngine()->get<Texture>("Texture")->buildSprite("bird");
+        shared_ptr<Sprite> sprite = self->get<BlueprintFactory>("/Templates")->build<Sprite>("bird");
         sprite->scaleX(84);
         sprite->setDrawHeight(2);
         self->add(sprite);
@@ -140,37 +128,57 @@ public:
 #include <exception>
 
 #ifdef __WIN32__ // the mingw SDL expects WinMain
-int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL0, -ine, int nShowCmd)
 #else
 int main(int argc, char **argv)
 #endif
 {
+    const Vect2i screen_size = {400, 720};
     Engine::enable();
     // TODO: deepcpy for object cloning, analog to packed scenes in godot
     
-    auto e = make_shared<Engine>(Vect2i(400, 720), Vect2f(0, 2000));
+    auto e = make_shared<Engine>(screen_size, Vect2f(0, 2000));
     // sprites, sizes gotten with brute force guessing
     try{
         e->add(e->gsys->loadTexture("./resources/flappy_sprite_sheet.png"));
     }catch(std::exception any){
         e->add(e->gsys->loadTexture("../exec_env/resources/flappy_sprite_sheet.png"));
     }
-    e->get<Texture>("Texture")->defineSprite({148 * 0, 0, 144, 256}, "background");
-    e->get<Texture>("Texture")->defineSprite({148 * 2, 0, 160, 56}, "floor");
-    e->get<Texture>("Texture")->defineSprite({0, 512 - 28, 28, 28}, "bird");
-    e->get<Texture>("Texture")->defineSprite({28 * 2, 512 - 190, 28 * 1, 162}, "green_pipe_above");
-    e->get<Texture>("Texture")->defineSprite({28 * 3, 512 - 190, 28 * 1, 162}, "green_pipe_bellow");
+    //e->gsys->camera_zoom = 0.9;
     
+    e->add(make_shared<BlueprintFactory>("Templates"));
+
+    e->get<BlueprintFactory>("Templates")->addBlueprint(
+        make_shared<Sprite>(e->get<Texture>("Texture"), Vect2i(148 * 0, 0), Vect2i(144, 256)),
+        "background"
+    );
+    e->get<BlueprintFactory>("Templates")->addBlueprint(
+        make_shared<Sprite>(e->get<Texture>("Texture"), Vect2i(148 * 2, 0), Vect2i(160, 56)),
+        "floor"
+    );
+    e->get<BlueprintFactory>("Templates")->addBlueprint(
+        make_shared<AnimatedSprite>(3, 10, e->get<Texture>("Texture"), Vect2i(0, 512 - 28), Vect2i(28, 28)),
+        "bird"
+    );
+    e->get<BlueprintFactory>("Templates")->addBlueprint(
+        make_shared<Sprite>(e->get<Texture>("Texture"), Vect2i(28 * 2, 512 - 190), Vect2i(28 * 1, 162)),
+        "green_pipe_bellow"
+    );
+    e->get<BlueprintFactory>("Templates")->addBlueprint(
+        make_shared<Sprite>(e->get<Texture>("Texture"), Vect2i(28 * 3, 512 - 190), Vect2i(28 * 1, 162)),
+        "green_pipe_above"
+    );
+
     // backround
-    e->add(e->get<Texture>("Texture")->buildSprite("background"));
-    e->get<Sprite>("Sprite")->offset = {400/2, 720/2};
-    e->get<Sprite>("Sprite")->scaleY(720);
+    e->add(e->get<BlueprintFactory>("Templates")->build("background"));
+    e->get<Sprite>("Sprite")->offset = screen_size / 2;
+    e->get<Sprite>("Sprite")->scaleY(screen_size.y);
     e->get<Sprite>("Sprite")->setDrawHeight(-2);
     
     // floor
-    e->add(make_shared<PhysicsObject>(Vect2f(0, 0), Vect2f(420,168), b2_staticBody));
-    e->get<PhysicsObject>("PhysicsObject")->offset = {400/2, 650};
-    e->get("PhysicsObject")->add(e->get<Texture>("Texture")->buildSprite("floor"));
+    e->add(make_shared<PhysicsObject>(Vect2f(0, 0), Vect2f(480, 168), b2_staticBody));
+    e->get<PhysicsObject>("PhysicsObject")->offset = {screen_size.x / 2, 650};
+    e->get("PhysicsObject")->add(e->get<BlueprintFactory>("Templates")->build("floor"));
     e->get<Sprite>("PhysicsObject/Sprite")->scaleX(480);
     e->get<Sprite>("PhysicsObject/Sprite")->setDrawHeight(1);
     e->get<Sprite>("PhysicsObject/Sprite")->attachLoopBehaviour([](Object *self, double delta){
@@ -182,8 +190,9 @@ int main(int argc, char **argv)
     
 
     e->add(make_shared<StartGameButton>());
-    e->get<Button>("Button")->base_size = {400, 720};
+    e->get<Button>("Button")->base_size = screen_size;
     e->get<Button>("Button")->attachHandler(make_shared<ButtonHandler>());
+
     e->start();
 
     Engine::disable();

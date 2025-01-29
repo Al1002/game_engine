@@ -78,6 +78,12 @@ public:
         return other.x == x && other.y == y;
     }
 
+    template<typename T>
+    operator Vect2<T>() const
+    {
+        return Vect2<T>(static_cast<T>(x), static_cast<T>(y));
+    }
+
     template <typename N = Num>
     N length() const
     {

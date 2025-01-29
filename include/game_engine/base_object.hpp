@@ -23,7 +23,6 @@ class HandlerI;
 class Object : public std::enable_shared_from_this<Object>
 {
     friend Engine;
-
 protected:
     weak_ptr<Object> parent_view;
     map<string, shared_ptr<Object>> children_map; ///< allows named access to children
@@ -63,24 +62,14 @@ public:
      * @param handle 
      */
     void attachHandler(shared_ptr<HandlerI> handle);
-    
 
     void dettachHandler(shared_ptr<HandlerI> handle);
-    
+
     /**
-     * @brief Returns a deep copy of the object, its children, etc. The clone is registered in the systems the original is registered in.
-     * @return shared_ptr<Object> 
+     * @brief Returns a deep copy of the object. The clone is entirely separate from the original.
+     * @return shared_ptr<Object> the cloned object
      */
-    /*virtual shared_ptr<Object> clone()
-    {
-        shared_ptr<Object> c = make_shared<Object>(this);
-        
-        for(auto child : children)
-        {
-            c->addChild(child->clone());
-        }
-        return c;
-    }*/
+    virtual shared_ptr<Object> clone() const;
 
     /**
      * @brief A callable which is called in the object's loop
@@ -126,7 +115,7 @@ public:
      * @throws  exception if the type is not an ancestor of the child's actual type
      */
     template <typename T>
-    inline shared_ptr<T> getChild(int index)
+    shared_ptr<T> getChild(int index)
     {
         auto child = dynamic_pointer_cast<T>(getChild(index));
         if (child.get() == nullptr)
@@ -143,7 +132,7 @@ public:
      * @throws  exception if the type is not an ancestor of the child's actual type
      */
     template <typename T = Object>
-    inline shared_ptr<T> get(int index)
+    shared_ptr<T> get(int index)
     {
         return getChild<T>(index);
     }
@@ -163,7 +152,7 @@ public:
      * @throws std::out_of_range 
      */
     template <typename T>
-    inline shared_ptr<T> getChild(string path)
+    shared_ptr<T> getChild(string path)
     {
         return dynamic_pointer_cast<T>(getChild(path));
     }
@@ -175,7 +164,7 @@ public:
      * @return shared_ptr<T>
      */
     template <typename T = Object>
-    inline shared_ptr<T> get(string path)
+    shared_ptr<T> get(string path)
     {
         return getChild<T>(path);
     }
@@ -195,5 +184,4 @@ public:
      * @throws std::out_of_range exception if no child has that name
      */
     shared_ptr<Object> removeChild(string name);
-
 };

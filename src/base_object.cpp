@@ -55,6 +55,16 @@ void Object::dettachHandler(shared_ptr<HandlerI> handle)
     handle->clearOwner();
 }
 
+shared_ptr<Object> Object::clone() const
+{
+    auto c = make_shared<Object>(desiredName);
+    for(auto child : children)
+    {
+        c->add(child->clone());
+    }
+    return c;
+}
+
 void Object::addChild(shared_ptr<Object> child)
 {
     if (std::find(children.begin(), children.end(), child) != children.end())
@@ -88,10 +98,14 @@ shared_ptr<Object> Object::getChild(int index)
 
 shared_ptr<Object> Object::getChild(string path)
 {
+    if(path == "")
+        throw std::invalid_argument("Path can not be empty");
+    if(path[0] == '/')
+        return getEngine()->getChild(path.substr(1));
     int delim = path.find('/');
     string current = path.substr(0, delim);
     auto it = children_map.find(current);
-
+    
     if (it == children_map.end())
         throw std::out_of_range("Child " + current + " not found");
     

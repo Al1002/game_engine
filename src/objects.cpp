@@ -14,6 +14,28 @@
 #include <events.hpp>
 #include <dispatcher.hpp>
 
+BlueprintFactory::BlueprintFactory(string desiredName) : Object(desiredName)
+{
+};
+
+void BlueprintFactory::addBlueprint(shared_ptr<Object> blueprint, string name)
+{
+    if(!blueprints.emplace(name, blueprint).second)
+    {
+        throw std::runtime_error("Blueprint with name \'" + name + "\' already exists.");
+    }
+}
+
+void BlueprintFactory::removeBlueprint(string name)
+{
+    blueprints.erase(name);
+}
+
+shared_ptr<Object> BlueprintFactory::build(string name)
+{
+    return blueprints.at(name)->clone();
+}
+
 const Vect2f Object2D::getPosition()
 {
     auto parent = dynamic_pointer_cast<Object2D>(parent_view.lock());
@@ -62,6 +84,23 @@ Object2D::Object2D(Vect2f offset, Vect2f base_size, string desiredName) : Object
     this->scale = 1;
 }
 
+Object2D::Object2D(Vect4f rect, string desiredName) : Object(desiredName)
+{
+    this->offset = {rect.x(), rect.y()};
+    this->base_size = {rect.z(), rect.w()};
+    this->scale = 1;
+}
+
+void Object2D::scaleX(int x)
+{
+    scale = x / base_size.x;
+}
+
+void Object2D::scaleY(int y)
+{
+    scale = y / base_size.y;
+}
+
 GraphicObject::GraphicObject()
 {}
 
@@ -106,6 +145,11 @@ void GraphicObject::setDrawColor(SDL_Renderer *render, Color c)
 Texture::Texture(string desiredName) : Object(desiredName)
 {}
 
+Vect2i Texture::getSize() const
+{
+    return size;
+}
+
 void Texture::setTexture(SDL_Renderer *render, string filepath)
 {
     texture = IMG_LoadTexture(render, filepath.c_str());
@@ -119,44 +163,57 @@ SDL_Texture *Texture::getTexture()
     return texture;
 }
 
-void Texture::defineSprite(Vect4i src_region, string name)
+/**
+void Texture::defineSprite(Vect2i origin, Vect2i size, string name, float scale)
 {
-    Sprite sprite(static_pointer_cast<Texture>(shared_from_this()), src_region, Vect2f(0, 0), Vect2f(src_region.z(), src_region.w()));
-    sprites.emplace(name, sprite);
+    Sprite sprite(static_pointer_cast<Texture>(shared_from_this()), origin, size);
+    sprite.scale = scale;
+    sprites.emplace(name, Sprite(sprite));
+}
+
+void Texture::defineAnimatedSprite(int frames, int frame_duration, Vect2i origin, Vect2i size, string name, float scale)
+{
+    AnimatedSprite sprite(frames, frame_duration, static_pointer_cast<Texture>(shared_from_this()), origin, size);
+    sprite.scale = scale;
+    sprites.emplace(name, AnimatedSprite(sprite));
 }
 
 shared_ptr<Sprite> Texture::buildSprite(string name)
 {
     // Sprite &sprite = sprites.at(name);
-    return make_shared<Sprite>(sprites.at(name)); // throws an exception without explaining what the issue is
+    return make_shared<Sprite>(*sprites.at(name)); // throws an exception without explaining what the issue is
 }
+*/
 
 Texture::~Texture()
 {
     SDL_DestroyTexture(texture);
 }
 
-Sprite::Sprite(shared_ptr<Texture> texture, Vect4i src_region, Vect2f offset, Vect2f size, string desiredName) 
-    : GraphicObject(offset, size, desiredName)
+Sprite::Sprite(shared_ptr<Texture> texture, Vect2i origin, Vect2i base_size, string desiredName) 
+    : GraphicObject(Vect2f(0, 0), Vect2f(base_size.x, base_size.y), desiredName)
 {
     this->texture = texture;
-    this->src_region = {src_region.x(), src_region.y(), src_region.z(), src_region.w()};
+    this->src_region = {origin.x, origin.y, base_size.x, base_size.y};
 }
 
-void Sprite::scaleX(int x)
+shared_ptr<Object> Sprite::clone() const
 {
-    scale = x / base_size.x;
-}
-
-void Sprite::scaleY(int y)
-{
-    scale = y / base_size.y;
+    auto c = make_shared<Sprite>(texture, Vect2i(src_region.x, src_region.y), Vect2i(src_region.w, src_region.h), desiredName);
+    c->offset = offset;
+    c->scale = scale;
+    c->rotation = rotation;
+    for(auto child : children)
+    {
+        c->add(child->clone());
+    }
+    return c;
 }
 
 void Sprite::draw()
 {
     auto pos = gsys_view->screenTransform({(int)getPosition().x, (int)getPosition().y});
-    Vect2i size = {(int)getSize().x * gsys_view->camera_zoom, (int)getSize().y * gsys_view->camera_zoom};
+    Vect2i size = Vect2i(getSize().x * gsys_view->camera_zoom, getSize().y * gsys_view->camera_zoom);
     SDL_Rect dest = {
         pos.x - size.x / 2, pos.y - size.y / 2,
         size.x, size.y};
@@ -164,6 +221,50 @@ void Sprite::draw()
         // TODO: copy ex supports hardware acceld rotation in the last 3 params
         // which wwe currently do not support
         std::cout << SDL_GetError() << '\n';
+}
+
+AnimatedSprite::AnimatedSprite(int frames, int ticks_per_frame, shared_ptr<Texture> texture, Vect2i origin, Vect2i size, string desiredName)
+    : Sprite(texture, origin, size, desiredName)
+{
+    this->start_origin = origin;
+    this->frames = frames;
+    this->ticks_per_frame = ticks_per_frame;
+}
+
+shared_ptr<Object> AnimatedSprite::clone() const
+{
+    auto c = make_shared<AnimatedSprite>(frames, ticks_per_frame, texture, Vect2i(src_region.x, src_region.y), Vect2i(src_region.w, src_region.h), desiredName);
+    c->offset = offset;
+    c->scale = scale;
+    c->rotation = rotation;
+    for(auto child : children)
+    {
+        c->add(child->clone());
+    }
+    return c;
+}
+
+void AnimatedSprite::draw()
+{
+    current_tick++;
+    if(current_tick >= ticks_per_frame)
+    {
+        current_tick = 0;
+        current_frame++;
+        src_region.x += src_region.w;
+        if(src_region.x > texture->getSize().x)
+        {
+            src_region.x -= texture->getSize().x;
+            src_region.y += src_region.h;
+        }
+    }
+    if(current_frame >= frames)
+    {
+        current_frame = 0;
+        src_region.x = start_origin.x;
+        src_region.y = start_origin.y;
+    }
+    Sprite::draw();
 }
 
 void EngineController::init()

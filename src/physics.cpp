@@ -14,8 +14,6 @@ PhysicsObject::PhysicsObject(Vect2f pos, Vect2f size, b2BodyType type, string de
     fixt.density = 1;
 }
 
-
-
 World::World(Vect2f gravity) : world({gravity.x / pixels_per_meter, gravity.y / pixels_per_meter})
 {
     
