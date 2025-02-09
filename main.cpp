@@ -14,7 +14,7 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_mixer.h>
 #include <vects.hpp> // Mathematical vectors
-#include <clock.h>   // clock/timer utility
+#include <clock/clock.hpp>   // clock/timer utility
 
 #include <box2d/box2d.h> 
 
@@ -39,16 +39,16 @@ public:
             getOwner()->body->SetLinearVelocity({0, -600.0f / 1024});
             getOwner()->get<AudioPlayer>(1)->play();
         }
-        if (e->sdl_event.keysym.sym == 'a' || e->sdl_event.keysym.sym == ' ' || e->sdl_event.keysym.sym == SDLK_UP)
-        {
-            getOwner()->body->SetLinearVelocity({-600.0f / 1024, 0});
-            getOwner()->get<AudioPlayer>(1)->play();
-        }
-        if (e->sdl_event.keysym.sym == 'd' || e->sdl_event.keysym.sym == ' ' || e->sdl_event.keysym.sym == SDLK_UP)
-        {
-            getOwner()->body->SetLinearVelocity({600.0f / 1024, 0});
-            getOwner()->get<AudioPlayer>(1)->play();
-        }
+        //if (e->sdl_event.keysym.sym == 'a' || e->sdl_event.keysym.sym == ' ' || e->sdl_event.keysym.sym == SDLK_UP)
+        //{
+        //    getOwner()->body->SetLinearVelocity({-600.0f / 1024, 0});
+        //    getOwner()->get<AudioPlayer>(1)->play();
+        //}
+        //if (e->sdl_event.keysym.sym == 'd' || e->sdl_event.keysym.sym == ' ' || e->sdl_event.keysym.sym == SDLK_UP)
+        //{
+        //    getOwner()->body->SetLinearVelocity({600.0f / 1024, 0});
+        //    getOwner()->get<AudioPlayer>(1)->play();
+        //}
     }
 };
 
@@ -137,6 +137,7 @@ int main(int argc, char **argv)
     Engine::enable();
     // TODO: deepcpy for object cloning, analog to packed scenes in godot
     
+
     auto e = make_shared<Engine>(screen_size, Vect2f(0, 2000));
     // sprites, sizes gotten with brute force guessing
     try{
@@ -177,8 +178,9 @@ int main(int argc, char **argv)
     
     // floor
     e->add(make_shared<PhysicsObject>(Vect2f(0, 0), Vect2f(480, 168), b2_staticBody));
-    e->get<PhysicsObject>("PhysicsObject")->offset = {screen_size.x / 2, 650};
+    e->get<PhysicsObject>("PhysicsObject")->offset = {screen_size.x / 2.0, 650};
     e->get("PhysicsObject")->add(e->get<BlueprintFactory>("Templates")->build("floor"));
+    
     e->get<Sprite>("PhysicsObject/Sprite")->scaleX(480);
     e->get<Sprite>("PhysicsObject/Sprite")->setDrawHeight(1);
     e->get<Sprite>("PhysicsObject/Sprite")->attachLoopBehaviour([](Object *self, double delta){

@@ -10,14 +10,14 @@
 #pragma once
 
 
-#include <SDL2/SDL.h>
+#include <SDL2/SDL.h>   
 #include <SDL2/SDL_main.h> //
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_mixer.h>
 
 #include <box2d/box2d.h>
 
-#include <clock.h>   // clock/timer utility
+#include <clock/clock.hpp>   // clock/timer utility
 
 #include "std_includes.hpp"
 #include "vects.hpp" // Mathematical vectors
@@ -29,7 +29,7 @@ class Engine;
 // extern
 class Object;
 class Event;
-class EngineController;
+class EngineLogger;
 class GraphicSystem;
 #include "events.hpp"
 #include "dispatcher.hpp"
@@ -45,7 +45,7 @@ public:
 
 class Engine : public std::enable_shared_from_this<Engine>
 {
-    friend EngineController;
+    friend EngineLogger;
 
     unordered_set<shared_ptr<Object>> bucket;
     unordered_set<shared_ptr<Object>> dead_bucket;

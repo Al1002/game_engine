@@ -46,8 +46,8 @@ void GraphicSystem::update()
     for (auto iter = bucket.begin(); iter != bucket.end(); iter++)
     {
         GraphicObject &obj = *iter->second.get();
-        // workers->enqueue(std::bind(&GraphicObject::draw, iter->second.get()));
-        obj.draw();
+        // workers->enqueue(std::bind(&GraphicObject::render, iter->second.get()));
+        obj.render();
     }
     SDL_RenderPresent(render);
 }

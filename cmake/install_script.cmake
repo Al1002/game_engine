@@ -28,3 +28,5 @@ install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/game_engineConfigVersion.cmake
     DESTINATION lib/cmake/game_engine
 )
+
+include(CPack)

@@ -7,13 +7,16 @@ find_library(SDL2_LIBRARY
 
 find_library(SDL2_IMAGE_LIBRARY
     NAMES SDL2_image
-    HINTS /usr/lib /usr/local/lib
+    HINTS /usr/local/lib /usr/lib
 )
-
 find_library(SDL2_MIXER_LIBRARY
     NAMES SDL2_mixer
-    HINTS /usr/lib /usr/local/lib
+    HINTS /usr/local/lib /usr/lib
 )
+
+message(STATUS "SDL2_LIBRARY: ${SDL2_LIBRARY}")
+message(STATUS "SDL2_IMAGE_LIBRARY: ${SDL2_IMAGE_LIBRARY}")
+message(STATUS "SDL2_MIXER_LIBRARY: ${SDL2_MIXER_LIBRARY}")
 
 add_library(engine STATIC
     engine.cpp
@@ -28,15 +31,22 @@ add_library(engine STATIC
 target_include_directories(engine PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/game_engine>
-    $<INSTALL_INTERFACE:include> # users need to include <game_engine/foobar.hpp> instead of <foobar.hpp>
+    $<INSTALL_INTERFACE:include>       # users include as <game_engine/foobar.hpp>
 )
 
 target_link_libraries(engine PUBLIC
     SDL2
-    SDL2main
-    SDL2_image
-    SDL2_mixer
+    SDL2main      
+    box2d                
 )
 
-target_link_libraries(engine PRIVATE $<BUILD_INTERFACE:clock::clock>)
+if(NOT MINGW)
+    target_link_libraries(engine PUBLIC
+    SDL2_image
+    SDL2_mixer
+    )
+endif()
+
+
+target_link_libraries(engine PRIVATE clock::clock)
 

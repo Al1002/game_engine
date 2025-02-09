@@ -14,4 +14,4 @@ Instead, run `exec_env/main`, generated from the `src/main.cpp` file.
 
 ### On windows
 
-No installation instruction exist for windows as of now.
+The engine can be crosscompiled using MinGW and used as a MinGW Windows library.

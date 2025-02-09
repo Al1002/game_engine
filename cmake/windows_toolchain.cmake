@@ -7,10 +7,12 @@ set(CMAKE_RC_COMPILER x86_64-w64-mingw32-windres)
 set(CMAKE_AR x86_64-w64-mingw32-ar)
 set(CMAKE_RANLIB x86_64-w64-mingw32-ranlib)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} \
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -v \
 -static-libgcc -static-libstdc++ \
--I/usr/local/x86_64-w64-mingw32/include -L/usr/local/x86_64-w64-mingw32/lib")
+-I/usr/local/x86_64-w64-mingw32/include \
+-L/usr/local/x86_64-w64-mingw32/lib")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
--static-libgcc -static-libstdc++ -I/usr/local/x86_64-w64-mingw32/include \
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -v -std=c++20 \
+-static-libgcc -static-libstdc++ \
+-I/usr/local/x86_64-w64-mingw32/include \
 -L/usr/local/x86_64-w64-mingw32/lib")

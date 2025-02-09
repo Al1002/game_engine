@@ -210,16 +210,20 @@ shared_ptr<Object> Sprite::clone() const
     return c;
 }
 
-void Sprite::draw()
+void Sprite::render()
 {
     auto pos = gsys_view->screenTransform({(int)getPosition().x, (int)getPosition().y});
     Vect2i size = Vect2i(getSize().x * gsys_view->camera_zoom, getSize().y * gsys_view->camera_zoom);
     SDL_Rect dest = {
         pos.x - size.x / 2, pos.y - size.y / 2,
-        size.x, size.y};
-    if (SDL_RenderCopyEx(render_view, texture->getTexture(), &src_region, &dest, 0, NULL, SDL_FLIP_NONE))
-        // TODO: copy ex supports hardware acceld rotation in the last 3 params
-        // which wwe currently do not support
+        size.x, size.y
+    };
+    SDL_Point pivot = {
+        size.x / 2, size.y / 2
+    };
+    Vect2f orientation = getOrientation();
+    double angle = atan2(orientation.y, orientation.x) * 180.0 / M_PI;
+    if (SDL_RenderCopyEx(render_view, texture->getTexture(), &src_region, &dest, angle, &pivot, SDL_FLIP_NONE))
         std::cout << SDL_GetError() << '\n';
 }
 
@@ -244,7 +248,7 @@ shared_ptr<Object> AnimatedSprite::clone() const
     return c;
 }
 
-void AnimatedSprite::draw()
+void AnimatedSprite::render()
 {
     current_tick++;
     if(current_tick >= ticks_per_frame)
@@ -264,10 +268,10 @@ void AnimatedSprite::draw()
         src_region.x = start_origin.x;
         src_region.y = start_origin.y;
     }
-    Sprite::draw();
+    Sprite::render();
 }
 
-void EngineController::init()
+void EngineLogger::init()
 {
     timeout.start_timer();
 }

@@ -56,7 +56,7 @@ Engine::Engine(Vect2i window_size, Vect2f gravity, double tick_delay)
     root = make_shared<Object>();
     tick_delay = 1.0f / tick_delay;
     registerObj(root);
-    registerObj(make_shared<EngineController>()); // does not exist in root, only bucket - bad
+    registerObj(make_shared<EngineLogger>()); // does not exist in root, only bucket - bad
 }
 
 void Engine::start()
@@ -181,7 +181,7 @@ shared_ptr<Object> Engine::removeChild(string name)
     return obj;
 }
 
-void EngineController::loop(double delta)
+void EngineLogger::loop(double delta)
 {
     double time = timeout.get_time();
     std::cout << string() + "Time: " + std::to_string(time) + "\n";

@@ -14,8 +14,9 @@
 #include <SDL2/SDL_main.h> //
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_mixer.h>
+#include <SDL2/SDL_ttf.h>
 
-#include <clock.h>   // clock/timer utility
+#include <clock/clock.hpp>   // clock/timer utility
 
 #include "std_includes.hpp"
 #include "colors.h" // #defined RGB_COLORs
@@ -28,7 +29,7 @@ class GraphicObject;
 class Texture;
 class Sprite;
 class AudioPlayer;
-class EngineController;
+class EngineLogger;
 class HandlerI;
 
 // extern
@@ -152,7 +153,7 @@ public:
 
     static void setDrawColor(SDL_Renderer *render, Color c);
 
-    virtual void draw() = 0;
+    virtual void render() = 0;
 };
 
 /**
@@ -160,6 +161,7 @@ public:
  */
 class Texture : public Object
 {
+protected:
     SDL_Texture *texture;
     Vect2i size;
 public:
@@ -218,7 +220,7 @@ public:
     /**
      * @brief Draw the sprite
      */
-    void draw() override;
+    void render() override;
 };
 
 /**
@@ -251,7 +253,7 @@ public:
     /**
      * @brief Draw the sprite
      */
-    void draw() override;
+    void render() override;
 };
 
 /**
@@ -303,8 +305,52 @@ public:
         Mix_FreeChunk(sound);
     }
 };
+#if 0
+/**
+ * @brief Texture used for text boxes
+ */
+class GlyphAtlas : public Texture
+{
+    //tldr SDL_TTF
+public:
+    TTF_Font *font;
+    GlyphAtlas(string font_name, int font_size, SDL_Renderer *render)
+    {
+        font = TTF_OpenFont(font_name.c_str(), font_size);
+        SDL_Color color = {0, 0, 0};
+        SDL_Surface *surface = TTF_RenderText_Solid(font, "abc", color);
+        texture = SDL_CreateTextureFromSurface(render, surface);
+        // some metadata for reading from this as well
+    }
+    ~GlyphAtlas()
+    {
+        TTF_CloseFont(font);
+    }
+};
 
-class EngineController : public Object
+/**
+ * @brief Graphic object for text
+ */
+class TextBox : public GraphicObject
+{
+    shared_ptr<GlyphAtlas> atlas;
+protected:
+    string text;
+public:
+    /*
+    void render() override
+    {
+        for(int i = 0; i < text.lenght; i++)
+        {
+            SDL_RendererCopy(glyph at text[i] to the dest)
+            sm else to find the next pos;
+        }
+    }
+    */
+};
+#endif
+
+class EngineLogger : public Object
 {
     Clock timeout;
 public:
