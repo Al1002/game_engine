@@ -111,26 +111,24 @@ public:
 
 #ifdef __WIN32__ // the mingw SDL expects WinMain
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL0, -ine, int nShowCmd)
-#else
-int main(int argc, char **argv)
 #endif
+
+int main(int argc, char **argv)
 {
     const Vect2i screen_size = {400, 720};
     Engine::enable();
-    // TODO: deepcpy for object cloning, analog to packed scenes in godot
-    
 
     auto e = make_shared<Engine>(screen_size, Vect2f(0, 2000));
-    // sprites, sizes gotten with brute force guessing
+
     try{
         e->add(e->gsys->loadTexture("./resources/flappy_sprite_sheet.png"));
     }catch(std::exception any){
         e->add(e->gsys->loadTexture("../exec_env/resources/flappy_sprite_sheet.png"));
     }
-    //e->gsys->camera_zoom = 0.9;
-    
+
     e->add(make_shared<BlueprintFactory>("Templates"));
 
+    // save sprites
     e->get<BlueprintFactory>("Templates")->addBlueprint(
         make_shared<Sprite>(e->get<Texture>("Texture"), Vect2i(148 * 0, 0), Vect2i(144, 256)),
         "background"
@@ -160,9 +158,10 @@ int main(int argc, char **argv)
     
     // floor
     e->add(make_shared<PhysicsObject>(Vect2f(0, 0), Vect2f(480, 168), b2_staticBody));
-    e->get<PhysicsObject>("PhysicsObject")->offset = {screen_size.x / 2.0, 650};
+    e->get<PhysicsObject>("PhysicsObject")->offset = {screen_size.x / 2.0f, 650};
     e->get("PhysicsObject")->add(e->get<BlueprintFactory>("Templates")->build("floor"));
     
+    // floor sprite
     e->get<Sprite>("PhysicsObject/Sprite")->scaleX(480);
     e->get<Sprite>("PhysicsObject/Sprite")->setDrawHeight(1);
     e->get<Sprite>("PhysicsObject/Sprite")->attachLoopBehaviour([](Object *self, double delta){
@@ -171,11 +170,11 @@ int main(int argc, char **argv)
         if(t_self->offset.x < -36)
             t_self->offset.x = 0;
     });
-    
 
+    // start game 
     e->add(make_shared<StartGameButton>());
     e->get<Button>("Button")->base_size = screen_size;
-    e->get<Button>("Button")->attachHandler(make_shared<ButtonHandler>());
+    //e->get<Button>("Button")->attachHandler(make_shared<ButtonHandler>());
 
     e->start();
 
