@@ -21,16 +21,6 @@ public:
             getOwner()->body->SetLinearVelocity({0, -600.0f / 1024});
             getOwner()->get<AudioPlayer>(1)->play();
         }
-        //if (e->sdl_event.keysym.sym == 'a' || e->sdl_event.keysym.sym == ' ' || e->sdl_event.keysym.sym == SDLK_UP)
-        //{
-        //    getOwner()->body->SetLinearVelocity({-600.0f / 1024, 0});
-        //    getOwner()->get<AudioPlayer>(1)->play();
-        //}
-        //if (e->sdl_event.keysym.sym == 'd' || e->sdl_event.keysym.sym == ' ' || e->sdl_event.keysym.sym == SDLK_UP)
-        //{
-        //    getOwner()->body->SetLinearVelocity({600.0f / 1024, 0});
-        //    getOwner()->get<AudioPlayer>(1)->play();
-        //}
     }
 };
 
