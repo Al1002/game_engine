@@ -71,29 +71,23 @@ public:
         else
             isStart = true; 
         getEngine()->add(make_shared<Object>("Game"));
+        
         // bird
-
         auto bird = make_shared<PhysicsObject>(Vect2f(0,0), Vect2f(6,6), b2_dynamicBody);
         bird->attachInitBehaviour([](Object *self){
-        static_cast<Object2D*>(self)->offset = {100, 100};
-        shared_ptr<Sprite> sprite = self->get<BlueprintFactory>("/Templates")->build<Sprite>("bird");
-        sprite->scaleX(84);
-        sprite->setDrawHeight(2);
-        self->add(sprite);
-        try{
-            self->add(make_shared<AudioPlayer>("resources/sfx_jump.mp3"));
-        }catch(std::exception any){
+            static_cast<Object2D*>(self)->offset = {100, 100};
+            shared_ptr<Sprite> sprite = self->get<BlueprintFactory>("/Templates")->build<Sprite>("bird");
+            sprite->scaleX(84);
+            sprite->setDrawHeight(2);
+            self->add(sprite);
             self->add(make_shared<AudioPlayer>("../exec_env/resources/sfx_jump.mp3"));
-        }
-    
-        self->get<AudioPlayer>(1)->setVolume(25);
-        self->attachHandler(make_shared<BirdHandler>());
+            self->get<AudioPlayer>(1)->setVolume(25);
+            self->attachHandler(make_shared<BirdHandler>());
         });
         getEngine()->get("Game")->add(bird);
 
         // pipes
         getEngine()->get("Game")->add(make_shared<PipeSpawner>());
-    
     }
 };
 
