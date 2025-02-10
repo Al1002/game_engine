@@ -34,19 +34,14 @@ target_include_directories(engine PUBLIC
     $<INSTALL_INTERFACE:include>       # users include as <game_engine/foobar.hpp>
 )
 
-target_link_libraries(engine PUBLIC
-    SDL2
-    SDL2main      
-    box2d                
-)
-
 if(NOT MINGW)
-    target_link_libraries(engine PUBLIC
-    SDL2_image
-    SDL2_mixer
+    target_link_libraries(engine PRIVATE
+        box2d                
+        SDL2
+        SDL2_image
+        SDL2_mixer
+        SDL2main
     )
 endif()
 
-
-target_link_libraries(engine PRIVATE clock::clock)
-
+target_link_libraries(engine PRIVATE clock)

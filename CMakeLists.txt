@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(game_engine VERSION 0.1)
+project(game_engine VERSION 1.0)
 
 
 set(CMAKE_CXX_STANDARD 20)
@@ -23,16 +23,3 @@ endif()
 
 include(cmake/install_script.cmake)
 include(cmake/cpack_script.cmake)
-
-find_package(clock)
-
-add_executable(main main.cpp)
-target_include_directories(main PUBLIC ${CMAKE_CURRENT_LIST_DIR})
-
-target_link_libraries(main PUBLIC engine)
-target_link_libraries(main PRIVATE $<BUILD_INTERFACE:clock::clock>)
-
-set_target_properties(main PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_LIST_DIR}/exec_env
-)
-
