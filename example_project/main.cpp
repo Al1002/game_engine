@@ -174,7 +174,6 @@ int main(int argc, char **argv)
     // start game 
     e->add(make_shared<StartGameButton>());
     e->get<Button>("Button")->base_size = screen_size;
-    //e->get<Button>("Button")->attachHandler(make_shared<ButtonHandler>());
 
     e->start();
 
