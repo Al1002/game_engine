@@ -110,11 +110,7 @@ int main(int argc, char **argv)
 
     auto e = make_shared<Engine>(screen_size, Vect2f(0, 2000));
 
-    try{
-        e->add(e->gsys->loadTexture("./resources/flappy_sprite_sheet.png"));
-    }catch(std::exception any){
-        e->add(e->gsys->loadTexture("../exec_env/resources/flappy_sprite_sheet.png"));
-    }
+    e->add(e->gsys->loadTexture("../exec_env/resources/flappy_sprite_sheet.png"));
 
     e->add(make_shared<BlueprintFactory>("Templates"));
 
