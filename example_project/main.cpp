@@ -3,6 +3,7 @@
 #include <game_engine/colors.h>  // #defined RGB_COLORs
 #include <game_engine/objects.hpp>
 #include <game_engine/events.hpp>
+#include <game_engine/base_handler.hpp>
 #include <game_engine/engine.hpp>
 #include <game_engine/graphic_system.hpp>
 #include <game_engine/physics.hpp>
@@ -38,7 +39,7 @@ public:
 
         add(make_shared<Object2D>());
         get<Object2D>(0)->offset = {500, 400 + (float)(rand() % 300)};
-        
+
         get(0)->add(get<BlueprintFactory>("/Templates")->build("green_pipe_above"));
         get<Sprite>("Object2D/Sprite")->scaleX(100);
         get<Sprite>("Object2D/Sprite")->offset = {0, 75};
@@ -105,9 +106,8 @@ int main(int argc, char **argv)
     auto e = make_shared<Engine>(screen_size, Vect2f(0, 2000));
 
     e->add(e->gsys->loadTexture("../exec_env/resources/flappy_sprite_sheet.png"));
-
     e->add(make_shared<BlueprintFactory>("Templates"));
-
+    
     // save sprites
     e->get<BlueprintFactory>("Templates")->addBlueprint(
         make_shared<Sprite>(e->get<Texture>("Texture"), Vect2i(148 * 0, 0), Vect2i(144, 256)),

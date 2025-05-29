@@ -10,7 +10,8 @@
  */
 #include <dispatcher.hpp>
 
-#include <events.hpp>
+#include <base_event.hpp>
+#include <base_handler.hpp>
 
 EventDispatcher::EventDispatcher()
 {

@@ -305,6 +305,7 @@ public:
         Mix_FreeChunk(sound);
     }
 };
+
 #if 0
 /**
  * @brief Texture used for text boxes

@@ -1,5 +1,6 @@
 #include <base_object.hpp>
-#include <events.hpp>
+#include <base_event.hpp>
+#include <base_handler.hpp>
 #include <engine.hpp>
 
 Object::Object(string desiredName)

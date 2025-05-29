@@ -1,10 +1,11 @@
+// Class B file
 /**
- * @file obj_manager.hpp
- * @author your name (you@domain.com)
+ * @file base_object.hpp
+ * @author Alex (aleksandriliev05@gmail.com)
  * @brief 
  * @version 0.1
  * @date 2025-01-14
- * @copyright Copyright (c) 2025
+ * @copyright Copyright A. Iliev (c) 2025
  */
 #pragma once
 #include "std_includes.hpp"
