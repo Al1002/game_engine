@@ -10,7 +10,7 @@ Then, run `cmake_build_alias.sh` to run CMake and build the project.
 
 This will generate a debian package called `game_engine-x.x-Linux.deb`, install it with `sudo dpkg -i`. 
 
-You can see sample usage in `example_project`.
+You can see sample usage in `https://github.com/Al1002/sample_project_for_dr`.
 
 ### On windows
 
